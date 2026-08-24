@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<div class="max-w-5xl mx-auto space-y-6 font-sans">
+    
+    <!-- Ucapan Selamat Datang -->
+    <div class="bg-gradient-to-r from-emerald-800 to-emerald-600 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
+        <!-- Dekorasi Background -->
+        <div class="absolute -right-10 -top-10 opacity-10">
+            <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+        </div>
+        
+        <div class="relative z-10">
+            <h2 class="text-3xl font-extrabold mb-2">Ahlan wa Sahlan, Admin! 👋</h2>
+            <p class="text-emerald-100 text-lg">Selamat datang di Panel Kontrol <span class="font-bold">MyMosque App</span>.</p>
+            <p class="text-emerald-200 text-sm mt-1">Anda saat ini mengelola data untuk: <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Masjid' %></p>
+        </div>
+    </div>
+
+    <!-- Quick Access Menu -->
+    <h3 class="text-lg font-bold text-gray-800 mt-8 mb-4">Akses Cepat</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Card 1 -->
+        <a href="/admin/zakat/input" class="group bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            </div>
+            <h4 class="text-gray-800 font-bold">Input Zakat Baru</h4>
+            <p class="text-gray-500 text-sm mt-1">Catat penerimaan zakat fitrah & mal jamaah.</p>
+        </a>
+
+        <!-- Card 2 -->
+        <a href="/admin/zakat" class="group bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <h4 class="text-gray-800 font-bold">Rekapitulasi Data</h4>
+            <p class="text-gray-500 text-sm mt-1">Lihat dan kelola seluruh data penerimaan.</p>
+        </a>
+
+        <!-- Card 3 -->
+        <a href="/admin/settings" class="group bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all">
+            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            </div>
+            <h4 class="text-gray-800 font-bold">Identitas Masjid</h4>
+            <p class="text-gray-500 text-sm mt-1">Ubah nama dan alamat profil masjid.</p>
+        </a>
+
+    </div>
+</div>
+
+<%- include('partials/footer') %>

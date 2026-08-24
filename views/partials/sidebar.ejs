@@ -1,0 +1,144 @@
+<div id="sidebar-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+<!-- CSS Khusus untuk Efek Running Text (Marquee) -->
+<style>
+    @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
+    .animate-marquee {
+        display: inline-block;
+        white-space: nowrap;
+        animation: marquee 14s linear infinite;
+    }
+    .marquee-container:hover .animate-marquee {
+        animation-play-state: paused;
+    }
+</style>
+
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-emerald-800 text-white transition duration-300 transform -translate-x-full md:relative md:translate-x-0 flex flex-col shadow-xl">
+    
+    <!-- 1. BRAND / NAMA APLIKASI -->
+    <div class="flex items-center justify-center h-14 bg-emerald-900 border-b border-emerald-700 px-4 flex-shrink-0">
+        <h1 class="text-base font-bold truncate">🕌 MyMosque App</h1>
+    </div>
+
+    <!-- 2. WIDGET WAKTU REAL-TIME -->
+    <div class="bg-emerald-900/60 border-b border-emerald-700 px-4 py-3 text-center flex-shrink-0 font-sans">
+        <div id="realtime-clock" class="text-lg font-extrabold tracking-wider text-emerald-100">00:00:00</div>
+        <div id="realtime-date" class="text-[11px] text-emerald-300 uppercase tracking-wide mt-0.5">Memuat waktu...</div>
+    </div>
+
+    <!-- 3. NAMA MASJID & ALAMAT -->
+    <div class="px-3 py-2.5 bg-emerald-950/40 border-b border-emerald-700/50 flex-shrink-0 text-center overflow-hidden relative marquee-container">
+        <p class="text-xs font-bold text-white uppercase truncate">
+            <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Nama Masjid' %>
+        </p>
+        <div class="w-full overflow-hidden whitespace-nowrap mt-0.5">
+            <div class="animate-marquee text-[11px] text-emerald-200">
+                📍 <%= typeof appSettings !== 'undefined' && appSettings.mosque_address ? appSettings.mosque_address : 'Alamat Masjid' %>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 4. MENU-MENU NAVIGASI (DIAMANKAN DENGAN PERMISSION) -->
+    <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto font-sans">
+        
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('dashboard'))) { %>
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Beranda
+            </a>
+        <% } %>
+
+        <!-- Menu Bertingkat Zakat -->
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('zakat'))) { %>
+            <div>
+                <button onclick="toggleZakatMenu()" class="w-full flex items-center justify-between gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors focus:outline-none">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Modul Zakat</span>
+                    </div>
+                    <svg id="zakat-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <!-- Sub-menu -->
+                <div id="zakat-submenu" class="hidden mt-1 space-y-1 pl-11 pr-4">
+                    <a href="/admin/zakat" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Rekapitulasi Zakat</a>
+                    <a href="/admin/zakat/input" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Input Data Zakat</a>
+                    <a href="/admin/zakat/laporan" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Laporan Zakat</a>
+                </div>
+            </div>
+        <% } %>
+
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('users'))) { %>
+            <a href="/admin/users" class="flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>            
+                Manajemen Pengguna
+            </a>
+        <% } %>
+
+        <!-- Menu Pengaturan Aplikasi -->
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('settings'))) { %>
+            <a href="/admin/settings" class="flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Pengaturan Aplikasi
+            </a>
+        <% } %>
+
+        <div class="pt-4 mt-4 border-t border-emerald-700">
+            <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-red-200 hover:bg-red-600 hover:text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Keluar
+            </a>
+        </div>
+    </nav>
+
+    <!-- 5. COPYRIGHT FOOTER -->
+    <div class="px-4 py-3 bg-emerald-900/50 border-t border-emerald-700/60 text-center flex-shrink-0">
+        <p class="text-[11px] text-emerald-200 font-medium">&copy; 2026 MyMosque App</p>
+        <p class="text-[10px] text-emerald-400 mt-0.5">All Rights Reserved</p>
+    </div>
+</aside>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        document.getElementById('sidebar-overlay').classList.toggle('hidden');
+    }
+    
+    function toggleZakatMenu() {
+        document.getElementById('zakat-submenu').classList.toggle('hidden');
+        document.getElementById('zakat-arrow').classList.toggle('rotate-180');
+    }
+
+    function updateClock() {
+        const now = new Date();
+        const userTimeZone = '<%= typeof appSettings !== "undefined" && appSettings.timezone ? appSettings.timezone : "Asia/Jakarta" %>';
+
+        const timeOptions = {
+            timeZone: userTimeZone, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false
+        };
+
+        const dateOptions = {
+            timeZone: userTimeZone,
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric'
+        };
+
+        const timeString = new Intl.DateTimeFormat('id-ID', timeOptions).format(now);
+        const dateString = new Intl.DateTimeFormat('id-ID', dateOptions).format(now);
+
+        document.getElementById('realtime-clock').innerText = timeString.replace(/\./g, ':');
+        document.getElementById('realtime-date').innerText = dateString;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+</script>

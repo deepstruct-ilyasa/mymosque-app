@@ -1,0 +1,231 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header Standar & Tombol Akhiri Agenda -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Agenda Aktif</span>
+            <h2 class="text-2xl font-bold text-gray-800 mt-2"><%= event.nama_event %></h2>
+            <p class="text-gray-500 text-sm">Pencatatan dengan validasi ketat batas minimum pembayaran.</p>
+        </div>
+        
+        <div class="flex flex-col md:flex-items-end gap-3 w-full md:w-auto">
+            <button type="button" onclick="bukaModalAkhiri()" class="self-start md:self-end px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                Akhiri Agenda Ini
+            </button>
+
+            <!-- Kotak Standar Ketetapan Event (Dinamis) -->
+            <div id="kotak_standar_info" class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 w-full md:w-72">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p id="label_standar_beras" class="text-[10px] uppercase font-bold text-gray-500">Standar Beras</p>
+                        <p id="display_standar_beras" class="text-lg font-bold text-emerald-800">
+                            <%= event.standar_fitrah_beras || 2.5 %> Kg
+                        </p>
+                    </div>
+                    <div>
+                        <p id="label_standar_uang" class="text-[10px] uppercase font-bold text-gray-500">Standar Uang</p>
+                        <p id="display_standar_uang" class="text-lg font-bold text-emerald-800">
+                            Rp <%= Number(event.standar_fitrah_uang || 40000).toLocaleString('id-ID') %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
+        <form id="form-transaksi" action="/admin/zakat/transaksi" method="POST" onsubmit="return validasiForm(event)" class="space-y-6">
+            <input type="hidden" name="event_id" value="<%= event.id %>">
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Muzakki</label>
+                <input type="text" name="nama_penyetor" required placeholder="Contoh: Bpk. Ahmad & Keluarga" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <!-- DROPDOWN UTAMA: Selalu tampil di atas agar bisa bolak-balik -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Zakat / Dana</label>
+                <select id="pilihan_jenis_zakat" name="jenis_zakat" onchange="gantiJenisZakat(this.value)" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none bg-white font-medium">
+                    <option value="Zakat Fitrah">Zakat Fitrah</option>
+                    <option value="Zakat Mal">Zakat Mal</option>
+                    <option value="Infaq / Sedekah">Infaq / Sedekah</option>
+                    <option value="Fidyah">Fidyah</option>
+                </select>
+            </div>
+
+            <!-- MEMUAT SELURUH FORM PARTIAL MODULAR -->
+            <%- include('partials/form-fitrah') %>
+            <%- include('partials/form-mal') %>
+            <%- include('partials/form-infaq') %>
+            <%- include('partials/form-fidyah') %>
+
+            <div class="pt-2 flex justify-end">
+                <button type="submit" class="px-8 py-3.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Simpan Transaksi Zakat
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL POP-UP PERINGATAN KURANG BAYAR -->
+<div id="modal-peringatan" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center space-y-4">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+            ⛔
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Pembayaran Tidak Valid</h3>
+        <p class="text-sm text-gray-600">Nominal pembayaran berada di bawah standar minimum wajib zakat. Mohon sesuaikan kembali nominal pembayaran Anda.</p>
+        <div class="pt-2">
+            <button type="button" onclick="tutupModal()" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors">
+                Perbaiki Nominal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL POP-UP KONFIRMASI AKHIRI AGENDA -->
+<div id="modal-akhiri" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center space-y-4">
+        <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+            ⚠️
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Akhiri Agenda Ini?</h3>
+        <p class="text-sm text-gray-600">Setelah diakhiri, agenda <strong><%= event.nama_event %></strong> akan dikunci dan sistem akan meminta Anda membuat periode baru untuk pencatatan berikutnya.</p>
+        
+        <form action="/admin/zakat/event/selesai" method="POST" class="flex gap-3 pt-2">
+            <input type="hidden" name="event_id" value="<%= event.id %>">
+            <button type="button" onclick="tutupModalAkhiri()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors">
+                Batal
+            </button>
+            <button type="submit" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors">
+                Ya, Akhiri Agenda
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Data standar event dari backend EJS ke JavaScript
+    const eventData = {
+        fitrahBeras: Number("<%= event.standar_fitrah_beras || 2.5 %>"),
+        fitrahUang: Number("<%= event.standar_fitrah_uang || 40000 %>"),
+        fidyahBeras: Number("<%= event.standar_fidyah_beras || 0.6 %>"),
+        fidyahUang: Number("<%= event.standar_fidyah_uang || 30000 %>"),
+        nisabMal: Number("<%= event.nisab_zakat_mal || 85000000 %>")
+    };
+
+    function gantiJenisZakat(nilai) {
+        document.querySelectorAll('.sub-form-section').forEach(el => el.classList.add('hidden'));
+        
+        document.querySelectorAll('.sub-form-section input, .sub-form-section select').forEach(el => {
+            if (el.hasAttribute('name')) {
+                el.dataset.oldName = el.getAttribute('name');
+                el.removeAttribute('name');
+            }
+        });
+
+        let targetId = '';
+        if (nilai === 'Zakat Fitrah') targetId = 'sub-form-ZakatFitrah';
+        else if (nilai === 'Zakat Mal') targetId = 'sub-form-ZakatMal';
+        else if (nilai === 'Infaq / Sedekah') targetId = 'sub-form-InfaqSedekah';
+        else if (nilai === 'Fidyah') targetId = 'sub-form-Fidyah';
+
+        let targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            targetEl.classList.remove('hidden');
+            targetEl.querySelectorAll('input, select').forEach(el => {
+                if (el.dataset.oldName) {
+                    el.setAttribute('name', el.dataset.oldName);
+                }
+            });
+            
+            // Panggil inisialisasi modul yang aktif
+            if (nilai === 'Zakat Fitrah') ZakatFitrah.gantiModeBayar();
+            else if (nilai === 'Fidyah') Fidyah.gantiModeBayar();
+            else if (nilai === 'Zakat Mal') ZakatMal.gantiModeBayar();
+        }
+
+        // UPDATE KOTAK INFORMASI STANDAR DI ATAS SESUAI JENIS ZAKAT
+        updateKotakStandar(nilai);
+    }
+
+    function updateKotakStandar(nilai) {
+        const labelBeras = document.getElementById('label_standar_beras');
+        const labelUang = document.getElementById('label_standar_uang');
+        const displayBeras = document.getElementById('display_standar_beras');
+        const displayUang = document.getElementById('display_standar_uang');
+        const kotakInfo = document.getElementById('kotak_standar_info');
+
+        kotakInfo.style.display = 'block';
+
+        if (nilai === 'Zakat Fitrah') {
+            labelBeras.innerText = "Standar Beras / Jiwa";
+            labelUang.innerText = "Standar Uang / Jiwa";
+            displayBeras.innerText = `${eventData.fitrahBeras} Kg`;
+            displayUang.innerText = `Rp ${eventData.fitrahUang.toLocaleString('id-ID')}`;
+        } else if (nilai === 'Fidyah') {
+            labelBeras.innerText = "Standar Beras / Hari";
+            labelUang.innerText = "Standar Uang / Hari";
+            displayBeras.innerText = `${eventData.fidyahBeras} Kg`;
+            displayUang.innerText = `Rp ${eventData.fidyahUang.toLocaleString('id-ID')}`;
+        } else if (nilai === 'Zakat Mal') {
+            labelBeras.innerText = "Nisab Zakat Mal";
+            labelUang.innerText = "Tarif Zakat Mal";
+            displayBeras.innerText = `Rp ${eventData.nisabMal.toLocaleString('id-ID')}`;
+            displayUang.innerText = "2.5% dari Harta";
+        } else if (nilai === 'Infaq / Sedekah') {
+            labelBeras.innerText = "Keterangan";
+            labelUang.innerText = "Nominal";
+            displayBeras.innerText = "Bebas / Sukarela";
+            displayUang.innerText = "Fleksibel";
+        }
+    }
+
+    function validasiForm(e) {
+        const jenisZakat = document.getElementById('pilihan_jenis_zakat').value;
+        let isValid = true;
+
+        if (jenisZakat === 'Zakat Fitrah') {
+            isValid = ZakatFitrah.validasi();
+        } else if (jenisZakat === 'Zakat Mal') {
+            isValid = ZakatMal.validasi();
+        } else if (jenisZakat === 'Infaq / Sedekah') {
+            isValid = InfaqSedekah.validasi();
+        } else if (jenisZakat === 'Fidyah') {
+            isValid = Fidyah.validasi();
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            document.getElementById('modal-peringatan').classList.remove('hidden');
+            return false;
+        }
+
+        return true;
+    }
+
+    function tutupModal() {
+        document.getElementById('modal-peringatan').classList.add('hidden');
+    }
+
+    function bukaModalAkhiri() {
+        document.getElementById('modal-akhiri').classList.remove('hidden');
+    }
+
+    function tutupModalAkhiri() {
+        document.getElementById('modal-akhiri').classList.add('hidden');
+    }
+
+    // Jalankan inisialisasi pertama kali saat halaman dimuat
+    window.onload = function() {
+        const dropdown = document.getElementById('pilihan_jenis_zakat');
+        gantiJenisZakat(dropdown.value);
+    };
+</script>
+
+<%- include('../partials/footer') %>

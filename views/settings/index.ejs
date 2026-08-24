@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-2xl mx-auto space-y-6 font-sans">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Preferensi Sistem</span>
+        <h2 class="text-2xl font-bold text-gray-800 mt-2">Identitas Masjid</h2>
+        <p class="text-gray-500 text-sm">Sesuaikan informasi masjid yang akan tampil pada sidebar aplikasi.</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <form action="/admin/settings" method="POST" class="space-y-5">
+            
+            <!-- Input Nama Masjid -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Nama Masjid</label>
+                <input type="text" name="mosque_name" value="<%= settings.mosque_name || '' %>" required class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Contoh: Masjid Al-Muharrar">
+            </div>
+
+            <!-- Input Alamat Masjid -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Alamat Lengkap Masjid</label>
+                <textarea name="mosque_address" rows="2" required class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Contoh: Jl. Sudirman No. 123..."><%= settings.mosque_address || '' %></textarea>
+            </div>
+
+            <!-- Input Zona Waktu -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Zona Waktu Masjid</label>
+                <select name="timezone" required class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    <option value="Asia/Jakarta" <%= settings.timezone === 'Asia/Jakarta' ? 'selected' : '' %>>WIB (Waktu Indonesia Barat - Asia/Jakarta)</option>
+                    <option value="Asia/Makassar" <%= settings.timezone === 'Asia/Makassar' ? 'selected' : '' %>>WITA (Waktu Indonesia Tengah - Asia/Makassar)</option>
+                    <option value="Asia/Jayapura" <%= settings.timezone === 'Asia/Jayapura' ? 'selected' : '' %>>WIT (Waktu Indonesia Timur - Asia/Jayapura)</option>
+                </select>
+            </div>
+            
+            <div class="pt-4 border-t border-gray-100 flex justify-end">
+                <button type="submit" class="py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+                    Simpan
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

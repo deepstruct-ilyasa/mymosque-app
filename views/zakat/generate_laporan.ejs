@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title><%= judul %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #e5e7eb;
+            margin: 0;
+            padding: 40px 0;
+        }
+
+        .no-print {
+            max-width: 210mm;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5mm;
+        }
+
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 30px auto;
+            background: white;
+            padding: 20mm;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .sheet-single {
+            justify-content: space-between;
+        }
+        .sheet-multi {
+            justify-content: flex-start;
+        }
+
+        tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        table {
+            font-size: 10pt;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+        th, td {
+            padding: 5px 6px;
+        }
+
+        @media print {
+            body {
+                background-color: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 0mm;
+            }
+            .a4-sheet {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                max-height: 297mm !important;
+                padding: 20mm !important;
+                page-break-after: always;
+                break-after: page;
+                overflow: hidden;
+            }
+            .a4-sheet:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tombol Aksi -->
+    <div class="no-print font-sans">
+        <a href="/admin/zakat/laporan" class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow transition">
+            ← Kembali
+        </a>
+        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg shadow flex items-center space-x-2 transition">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Cetak Laporan
+        </button>
+    </div>
+
+    <% 
+        // FUNGSI BANTU FORMAT KILOGRAM (Titik jadi koma, tanpa ribuan, abaikan .000)
+        function formatKg(angka) {
+            if (angka === null || angka === undefined || isNaN(angka) || angka === 0) return "0";
+            return new Intl.NumberFormat('id-ID', {
+                maximumFractionDigits: 3,
+                useGrouping: false
+            }).format(angka);
+        }
+
+        const totalPages = pagedTransactions.length; 
+        const daftarKat = ['Zakat Fitrah', 'Zakat Mal', 'Infaq / Sedekah', 'Fidyah'];
+    %>
+
+    <% pagedTransactions.forEach((pageTrxs, pageIndex) => { %>
+        <div class="a4-sheet text-gray-900 <%= totalPages === 1 ? 'sheet-single' : 'sheet-multi' %>">
+            <div>
+                <!-- KOP SURAT (Hanya tampil di Halaman 1) -->
+                <% if (pageIndex === 0) { %>
+                    <div class="border-b-4 border-double border-gray-900 pb-4 mb-6 flex items-center justify-between">
+                        <div class="w-24 flex-shrink-0 flex items-center justify-center">
+                            <% if (event.logo) { %>
+                                <img src="/uploads/zakat/<%= event.logo %>" alt="Logo Masjid" class="w-20 h-20 object-contain">
+                            <% } else { %>
+                                <div class="w-16 h-16 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-400 text-center rounded">Logo</div>
+                            <% } %>
+                        </div>
+                        <div class="text-center flex-grow px-2">
+                            <h2 class="text-xl font-bold uppercase tracking-wider"><%= event.sub_lembaga || 'PANITIA AMIL ZAKAT' %></h2>
+                            <h1 class="text-xl font-extrabold uppercase tracking-wide mt-1"><%= event.nama_lembaga || 'MASJID AL-MUHARRAR' %></h1>
+                            <p class="text-xs text-gray-600 mt-1"><%= event.alamat || '' %></p>
+                            <p class="text-xs text-gray-600 mt-1">Telp: <%= event.telepon || '-' %></p>
+                        </div>
+                        <div class="w-24 flex-shrink-0"></div>
+                    </div>
+
+                    <div class="text-center mb-6">
+                        <h3 class="text-base font-bold uppercase">LAPORAN REKAPITULASI PENERIMAAN ZAKAT</h3>
+                    </div>
+
+                    <!-- RINGKASAN EKSEKUTIF (Hanya di Halaman 1) -->
+                    <div class="mb-6">
+                        <h4 class="text-xs font-bold uppercase tracking-wider mb-2">I. Ringkasan Total Penerimaan</h4>
+                        <table class="w-full border-collapse border border-gray-400 text-xs text-left">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border border-gray-400 p-2 text-center">Jenis Zakat</th>
+                                    <th class="border border-gray-400 p-2 text-center">Jumlah</th>
+                                    <th class="border border-gray-400 p-2 text-center">Beras</th>
+                                    <th class="border border-gray-400 p-2 text-center">Infaq Beras</th>
+                                    <th class="border border-gray-400 p-2 text-center">Uang</th>
+                                    <th class="border border-gray-400 p-2 text-center">Infaq Uang</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% 
+                                    daftarKat.forEach(kat => {
+                                        let r = summary_kategori[kat] || { jiwa: 0, beras: 0, infaqBeras: 0, uang: 0, infaqUang: 0 };
+                                %>
+                                    <tr>
+                                        <td class="border border-gray-400 p-2 font-semibold"><%= kat %></td>
+                                        <td class="border border-gray-400 p-2 text-center">
+                                            <% if (r.jiwa > 0) { %>
+                                                <%= r.jiwa %> <%= kat === 'Fidyah' ? 'Hari' : 'Jiwa' %>
+                                            <% } else { %>
+                                                -
+                                            <% } %>
+                                        </td>
+                                        <td class="border border-gray-400 p-2 text-center"><%= r.beras > 0 ? formatKg(r.beras) + ' Kg' : '-' %></td>
+                                        <td class="border border-gray-400 p-2 text-center"><%= r.infaqBeras > 0 ? '+' + formatKg(r.infaqBeras) + ' Kg' : '-' %></td>
+                                        <td class="border border-gray-400 p-2 text-center"><%= r.uang > 0 ? 'Rp ' + Number(r.uang).toLocaleString('id-ID') : '-' %></td>
+                                        <td class="border border-gray-400 p-2 text-center"><%= r.infaqUang > 0 ? '+Rp ' + Number(r.infaqUang).toLocaleString('id-ID') : '-' %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+
+                <!-- TABEL RINCIAN PER KATEGORI DI TIAP HALAMAN -->
+                <div class="mb-4">
+                    <h4 class="text-xs font-bold uppercase tracking-wider mb-2">
+                        II. Daftar Rincian Penerimaan Zakat <% if(totalPages > 1) { %>(Hal. <%= pageIndex + 1 %> dari <%= totalPages %>)<% } %>
+                    </h4>
+
+                    <% 
+                        daftarKat.forEach(kat => {
+                            let transaksiPerKat = pageTrxs.filter(t => t.jenis_zakat === kat);
+                            if (transaksiPerKat.length > 0) {
+                    %>
+                        <div class="bg-gray-200 border-t border-x border-black px-2 py-1 text-[11px] font-bold text-black mt-3">
+                            Kategori: <%= kat %>
+                        </div>
+                        <table class="w-full border-collapse border border-gray-400 text-xs text-left mb-2">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-700">
+                                    <th class="border border-gray-400 p-1.5 text-center w-8">No</th>
+                                    <th class="border border-gray-400 p-1.5 text-center">Nama Muzakki</th>
+                                    <th class="border border-gray-400 p-1.5 text-center">Jumlah</th>
+                                    <th class="border border-gray-400 p-1.5 text-center">Beras</th>
+                                    <th class="border border-gray-400 p-1.5 text-center">Uang Tunai</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% transaksiPerKat.forEach((trx, index) => { %>
+                                    <tr>
+                                        <td class="border border-gray-400 p-1.5 text-center"><%= index + 1 %></td>
+                                        <td class="border border-gray-400 p-1.5 font-semibold"><%= trx.nama_penyetor %></td>
+                                        <td class="border border-gray-400 p-1.5 text-center uppercase">
+                                            <% if (trx.jumlah_jiwa > 0) { %>
+                                                <%= trx.jumlah_jiwa %> <%= kat === 'Fidyah' ? 'Hari' : 'Jiwa' %>
+                                            <% } else { %>
+                                                <%= trx.jenis_bayar %>
+                                            <% } %>
+                                        </td>
+                                        <td class="border border-gray-400 p-1.5 text-right">
+                                            <%= trx.jumlah_beras > 0 ? formatKg(trx.jumlah_beras) + ' Kg' : '-' %>
+                                            <% if(trx.infaq_beras > 0) { %><span class="text-[10px]">(+<%= formatKg(trx.infaq_beras) + ' Kg' %>)</span><% } %>
+                                        </td>
+                                        <td class="border border-gray-400 p-1.5 text-right">
+                                            <%= trx.jumlah_uang > 0 ? 'Rp ' + Number(trx.jumlah_uang).toLocaleString('id-ID') : '-' %>
+                                            <% if(trx.infaq_uang > 0) { %><span class="text-[10px]">(+Rp <%= Number(trx.infaq_uang).toLocaleString('id-ID') %>)</span><% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    <% 
+                            }
+                        }); 
+                    %>
+                </div>
+            </div>
+
+            <!-- TANDA TANGAN (Hanya di Halaman Terakhir) -->
+            <% if (pageIndex === totalPages - 1) { %>
+                <div class="flex justify-between items-start pt-8 text-sm px-16 <%= totalPages === 1 ? 'mt-auto' : 'mt-16' %>">
+                    <div class="text-center">
+                        <p>Mengetahui,</p>
+                        <p class="font-bold tracking-wider mb-14"><%= event.ketua || 'Ketua Panitia' %></p>
+                        <br><br><br>
+                        <p class="font-bold underline tracking-wide"><%= event.nama_ketua || '( Belum diisi )' %></p>
+                    </div>
+                    <div class="text-center">
+                        <p>Ditetapkan di, <%= tanggalCetak %></p>
+                        <p class="font-bold tracking-wider mb-14"><%= event.sub_ketua || 'Sekretaris' %></p>
+                        <br><br><br>
+                        <p class="font-bold underline tracking-wide"><%= event.nama_sub_ketua || '( Belum diisi )' %></p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    <% }) %>
+
+</body>
+</html>

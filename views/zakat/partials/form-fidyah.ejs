@@ -1,0 +1,240 @@
+<div id="sub-form-Fidyah" class="sub-form-section space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Hari (Tanggungan)</label>
+            <input type="number" id="fidyah_hari_tunggal" name="jumlah_jiwa" value="1" min="1" oninput="Fidyah.gantiModeBayar()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-purple-500 outline-none font-bold text-purple-700 bg-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Pembayaran Fidyah</label>
+            <select id="fidyah_jenis_bayar" name="jenis_bayar" onchange="Fidyah.gantiModeBayar()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-purple-500 outline-none bg-white font-semibold text-purple-800">
+                <option value="Uang">Uang</option>
+                <option value="Beras">Beras</option>
+                <option value="Kombinasi">Kombinasi</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- MODE TUNGGAL FIDYAH -->
+    <div id="fidyah_section_tunggal" class="space-y-6 bg-purple-50/50 border border-purple-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Hari</label>
+                <input type="number" id="fidyah_hari_display" value="1" readonly class="w-full border border-gray-300 rounded-xl p-3.5 bg-gray-100 font-bold text-purple-700">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Total</label>
+                <!-- step="0.001" untuk mengakomodasi 3 digit desimal -->
+                <input type="number" step="0.001" id="fidyah_jumlah_tunggal" oninput="Fidyah.cekMinimalTunggal()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-purple-500 outline-none font-bold text-purple-700 bg-white">
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-purple-200">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kalkulasi Otomatis Fidyah</span>
+            <p id="fidyah_teks_kalkulasi_tunggal" class="text-sm font-bold text-purple-800">Hari x std = jumlah</p>
+            <p id="fidyah_warning_tunggal" class="text-xs font-bold text-red-600 mt-1 hidden">⚠️ Peringatan: Pembayaran Fidyah di bawah standar minimum!</p>
+        </div>
+    </div>
+
+    <!-- MODE KOMBINASI FIDYAH -->
+    <div id="fidyah_section_kombinasi" class="hidden space-y-6 bg-purple-50/50 border border-purple-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-purple-200/60">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Hari (beras)</label>
+                <input type="number" id="fidyah_hari_beras" name="jiwa_beras" value="0" min="0" oninput="Fidyah.ubahHariBeras()" class="w-full border border-gray-300 rounded-xl p-3.5 font-bold text-purple-700 bg-white">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Beras (Kg)</label>
+                <!-- step="0.001" presisi 3 desimal -->
+                <input type="number" step="0.001" id="fidyah_jumlah_beras_kombo" name="jumlah_beras" oninput="Fidyah.cekMinimalKombo()" class="w-full border border-gray-300 rounded-xl p-3.5 font-bold text-purple-700 bg-white">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Hari (uang)</label>
+                <input type="number" id="fidyah_hari_uang" name="jiwa_uang" value="0" min="0" oninput="Fidyah.ubahHariUang()" class="w-full border border-gray-300 rounded-xl p-3.5 font-bold text-purple-700 bg-white">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Uang (Rp)</label>
+                <input type="number" id="fidyah_jumlah_uang_kombo" name="jumlah_uang" oninput="Fidyah.cekMinimalKombo()" class="w-full border border-gray-300 rounded-xl p-3.5 font-bold text-purple-700 bg-white">
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-purple-200 space-y-1">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kalkulasi Kombinasi Fidyah</span>
+            <p id="fidyah_teks_kalkulasi_kombinasi" class="text-sm font-bold text-purple-800">(Hari x std beras) + (Hari x std uang)</p>
+            <p id="fidyah_warning_kombo_beras" class="text-xs font-bold text-red-600 hidden">⚠️ Peringatan Beras Fidyah kurang!</p>
+            <p id="fidyah_warning_kombo_uang" class="text-xs font-bold text-red-600 hidden">⚠️ Peringatan Uang Fidyah kurang!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.Fidyah = {
+        stdUang: Number(<%= event.standar_fidyah_uang || 30000 %>),
+        stdBeras: Number(<%= event.standar_fidyah_beras || 0.6 %>),
+
+        gantiModeBayar: function() {
+            const jenis = document.getElementById('fidyah_jenis_bayar').value;
+            const hariUtama = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 1;
+            document.getElementById('fidyah_hari_display').value = hariUtama;
+
+            const secTunggal = document.getElementById('fidyah_section_tunggal');
+            const secKombo = document.getElementById('fidyah_section_kombinasi');
+            const inputJumlahTunggal = document.getElementById('fidyah_jumlah_tunggal');
+
+            if (jenis === 'Kombinasi') {
+                secTunggal.classList.add('hidden');
+                secKombo.classList.remove('hidden');
+
+                document.getElementById('fidyah_hari_tunggal').removeAttribute('name');
+                inputJumlahTunggal.removeAttribute('name');
+
+                // Default awal: Beras 0 hari, Uang semuanya (mengikuti total hari di atas)
+                document.getElementById('fidyah_hari_beras').value = 0;
+                document.getElementById('fidyah_hari_uang').value = hariUtama;
+
+                document.getElementById('fidyah_jumlah_beras_kombo').value = (0).toFixed(3);
+                document.getElementById('fidyah_jumlah_uang_kombo').value = hariUtama * this.stdUang;
+
+                this.kalkulasiKombinasi();
+            } else {
+                secTunggal.classList.remove('hidden');
+                secKombo.classList.add('hidden');
+
+                document.getElementById('fidyah_hari_tunggal').setAttribute('name', 'jumlah_jiwa');
+                inputJumlahTunggal.setAttribute('name', jenis === 'Beras' ? 'jumlah_beras' : 'jumlah_uang');
+
+                const hari = parseInt(hariUtama) || 1;
+                if (jenis === 'Beras') {
+                    inputJumlahTunggal.value = (hari * this.stdBeras).toFixed(3);
+                } else {
+                    inputJumlahTunggal.value = hari * this.stdUang;
+                }
+
+                this.kalkulasiTunggal();
+            }
+        },
+
+        kalkulasiTunggal: function() {
+            const jenis = document.getElementById('fidyah_jenis_bayar').value;
+            const hari = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 0;
+            document.getElementById('fidyah_hari_display').value = hari;
+            
+            const inputJumlah = document.getElementById('fidyah_jumlah_tunggal');
+            const teksKalkulasi = document.getElementById('fidyah_teks_kalkulasi_tunggal');
+
+            const minimal = jenis === 'Beras' ? (hari * this.stdBeras) : (hari * this.stdUang);
+
+            if (!inputJumlah.value || Number(inputJumlah.value) < minimal) {
+                inputJumlah.value = jenis === 'Beras' ? minimal.toFixed(3) : minimal;
+            }
+
+            if (jenis === 'Beras') {
+                teksKalkulasi.innerText = `${hari} Hari x ${this.stdBeras} Kg = ${(hari * this.stdBeras).toFixed(3)} Kg Beras (Min)`;
+            } else {
+                teksKalkulasi.innerText = `${hari} Hari x Rp ${this.stdUang.toLocaleString('id-ID')} = Rp ${(hari * this.stdUang).toLocaleString('id-ID')} (Min)`;
+            }
+            this.cekMinimalTunggal();
+        },
+
+        cekMinimalTunggal: function() {
+            const jenis = document.getElementById('fidyah_jenis_bayar').value;
+            const hari = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 0;
+            const aktual = parseFloat(document.getElementById('fidyah_jumlah_tunggal').value) || 0;
+            const minimal = jenis === 'Beras' ? (hari * this.stdBeras) : (hari * this.stdUang);
+
+            document.getElementById('fidyah_warning_tunggal').classList.toggle('hidden', aktual >= minimal);
+        },
+
+        // Logika saat amil mengubah hari beras di mode kombinasi
+        ubahHariBeras: function() {
+            const totalHari = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 0;
+            let hBeras = parseInt(document.getElementById('fidyah_hari_beras').value) || 0;
+
+            // Batasi agar hari beras tidak melebihi total tanggungan
+            if (hBeras > totalHari) {
+                hBeras = totalHari;
+                document.getElementById('fidyah_hari_beras').value = hBeras;
+            }
+            if (hBeras < 0) {
+                hBeras = 0;
+                document.getElementById('fidyah_hari_beras').value = hBeras;
+            }
+
+            // Sisa otomatis jadi hari uang
+            const hUang = totalHari - hBeras;
+            document.getElementById('fidyah_hari_uang').value = hUang;
+
+            this.kalkulasiKombinasi();
+        },
+
+        // Logika saat amil mengubah hari uang di mode kombinasi
+        ubahHariUang: function() {
+            const totalHari = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 0;
+            let hUang = parseInt(document.getElementById('fidyah_hari_uang').value) || 0;
+
+            if (hUang > totalHari) {
+                hUang = totalHari;
+                document.getElementById('fidyah_hari_uang').value = hUang;
+            }
+            if (hUang < 0) {
+                hUang = 0;
+                document.getElementById('fidyah_hari_uang').value = hUang;
+            }
+
+            // Sisa otomatis jadi hari beras
+            const hBeras = totalHari - hUang;
+            document.getElementById('fidyah_hari_beras').value = hBeras;
+
+            this.kalkulasiKombinasi();
+        },
+
+        kalkulasiKombinasi: function() {
+            const hBeras = parseInt(document.getElementById('fidyah_hari_beras').value) || 0;
+            const hUang = parseInt(document.getElementById('fidyah_hari_uang').value) || 0;
+
+            const minB = hBeras * this.stdBeras;
+            const minU = hUang * this.stdUang;
+
+            const iBeras = document.getElementById('fidyah_jumlah_beras_kombo');
+            const iUang = document.getElementById('fidyah_jumlah_uang_kombo');
+
+            iBeras.value = minB.toFixed(3);
+            iUang.value = minU;
+
+            document.getElementById('fidyah_teks_kalkulasi_kombinasi').innerText = 
+                `(${hBeras} Hari x ${this.stdBeras} Kg = ${minB.toFixed(3)} Kg) + (${hUang} Hari x Rp ${this.stdUang.toLocaleString('id-ID')} = Rp ${minU.toLocaleString('id-ID')})`;
+
+            this.cekMinimalKombo();
+        },
+
+        cekMinimalKombo: function() {
+            const hBeras = parseInt(document.getElementById('fidyah_hari_beras').value) || 0;
+            const hUang = parseInt(document.getElementById('fidyah_hari_uang').value) || 0;
+            const aBeras = parseFloat(document.getElementById('fidyah_jumlah_beras_kombo').value) || 0;
+            const aUang = parseFloat(document.getElementById('fidyah_jumlah_uang_kombo').value) || 0;
+
+            document.getElementById('fidyah_warning_kombo_beras').classList.toggle('hidden', aBeras >= (hBeras * this.stdBeras));
+            document.getElementById('fidyah_warning_kombo_uang').classList.toggle('hidden', aUang >= (hUang * this.stdUang));
+        },
+
+        validasi: function() {
+            const jenis = document.getElementById('fidyah_jenis_bayar').value;
+            let kurang = false;
+            if (jenis !== 'Kombinasi') {
+                const hari = parseInt(document.getElementById('fidyah_hari_tunggal').value) || 0;
+                const aktual = parseFloat(document.getElementById('fidyah_jumlah_tunggal').value) || 0;
+                const min = jenis === 'Beras' ? (hari * this.stdBeras) : (hari * this.stdUang);
+                if (aktual < min) kurang = true;
+            } else {
+                const hB = parseInt(document.getElementById('fidyah_hari_beras').value) || 0;
+                const hU = parseInt(document.getElementById('fidyah_hari_uang').value) || 0;
+                const aB = parseFloat(document.getElementById('fidyah_jumlah_beras_kombo').value) || 0;
+                const aU = parseFloat(document.getElementById('fidyah_jumlah_uang_kombo').value) || 0;
+                if (aB < (hB * this.stdBeras) || aU < (hU * this.stdUang)) kurang = true;
+            }
+            return !kurang;
+        }
+    };
+</script>

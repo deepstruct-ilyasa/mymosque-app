@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <%- include('../partials/sidebar') %>
+
+        <div class="flex flex-col flex-1 w-full">
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8 flex items-center justify-center">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 max-w-2xl w-full my-auto">
+                    <h2 class="text-2xl font-bold text-gray-800 text-center mb-1">Edit Agenda & Kop Surat</h2>
+                    <p class="text-gray-500 text-sm text-center mb-6">Perbarui informasi kop surat, pejabat penandatangan, atau ketentuan standar untuk agenda ini.</p>
+                    
+                    <form action="/admin/zakat/laporan/edit/<%= event.id %>" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        
+                        <!-- INFORMASI UTAMA -->
+                        <div class="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Periode / Agenda</label>
+                                <input type="text" name="nama_event" value="<%= event.nama_event %>" required class="w-full border border-gray-300 rounded-lg p-3 bg-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan / Deskripsi</label>
+                                <input type="text" name="deskripsi" value="<%= event.deskripsi || '' %>" class="w-full border border-gray-300 rounded-lg p-3 bg-white outline-none">
+                            </div>
+                        </div>
+
+                        <!-- COLLAPSE 1: KOP SURAT -->
+                        <details class="bg-gray-50 border border-gray-200 rounded-xl p-4 group" open>
+                            <summary class="font-semibold text-sm text-gray-700 cursor-pointer flex justify-between items-center select-none">
+                                <span class="flex items-center gap-2">📂 Identitas Lembaga & Kop Surat</span>
+                                <span class="text-xs text-emerald-600 font-bold group-open:hidden">[ Buka ]</span>
+                                <span class="text-xs text-red-600 font-bold hidden group-open:inline">[ Tutup ]</span>
+                            </summary>
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-200 space-y-3 bg-white p-3 rounded-lg">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Nama Lembaga / Masjid</label>
+                                    <input type="text" name="nama_lembaga" value="<%= event.nama_lembaga %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Sub Lembaga / Kepanitiaan</label>
+                                    <input type="text" name="sub_lembaga" value="<%= event.sub_lembaga %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">No. Telepon</label>
+                                        <input type="text" name="telepon" value="<%= event.telepon %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Ganti Logo (Opsional)</label>
+                                        
+                                        <!-- PREVIEW LOGO LAMA -->
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <% if(event.logo) { %>
+                                                <div class="w-12 h-12 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                    <img src="/uploads/zakat/<%= event.logo %>" alt="Logo" class="w-full h-full object-contain">
+                                                </div>
+                                                <span class="text-[11px] text-gray-500">Logo aktif saat ini. Pilih file baru di bawah jika ingin menggantinya.</span>
+                                            <% } else { %>
+                                                <div class="text-[11px] text-gray-400 italic">Belum ada logo yang di-upload.</div>
+                                            <% } %>
+                                        </div>
+
+                                        <input type="file" name="logo" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-gray-50">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Alamat Sekretariat</label>
+                                    <textarea name="alamat" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" rows="2"><%= event.alamat %></textarea>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- COLLAPSE 2: PEJABAT PENANDATANGAN -->
+                        <details class="bg-gray-50 border border-gray-200 rounded-xl p-4 group">
+                            <summary class="font-semibold text-sm text-gray-700 cursor-pointer flex justify-between items-center select-none">
+                                <span class="flex items-center gap-2">✍️ Pejabat Penandatangan Laporan</span>
+                                <span class="text-xs text-emerald-600 font-bold group-open:hidden">[ Buka ]</span>
+                                <span class="text-xs text-red-600 font-bold hidden group-open:inline">[ Tutup ]</span>
+                            </summary>
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-200 space-y-3 bg-white p-3 rounded-lg">
+                                <!-- JABATAN & NAMA KETUA -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Jabatan Utama (Penandatangan 1)</label>
+                                        <% 
+                                            const isKetuaStandard = ['Ketua Panitia', 'Ketua Takmir'].includes(event.ketua);
+                                        %>
+                                        <select id="select_jabatan_ketua" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white" onchange="toggleCustom('ketua')">
+                                            <option value="Ketua Panitia" <%= event.ketua === 'Ketua Panitia' ? 'selected' : '' %>>Ketua Panitia</option>
+                                            <option value="Ketua Takmir" <%= event.ketua === 'Ketua Takmir' ? 'selected' : '' %>>Ketua Takmir</option>
+                                            <option value="Custom" <%= !isKetuaStandard ? 'selected' : '' %>>Lainnya (Custom)...</option>
+                                        </select>
+                                        <input type="text" id="input_jabatan_ketua" name="ketua" value="<%= event.ketua || 'Ketua Panitia' %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm mt-2 <%= isKetuaStandard ? 'hidden' : '' %>" placeholder="Ketik nama jabatan...">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Nama Lengkap Ketua</label>
+                                        <input type="text" name="nama_ketua" value="<%= event.nama_ketua || '' %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" placeholder="Contoh: Ust. Ahmad" required>
+                                    </div>
+                                </div>
+
+                                <!-- JABATAN & NAMA PENDAMPING -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Jabatan Pendamping (Penandatangan 2)</label>
+                                        <% 
+                                            const isSubStandard = ['Bendahara', 'Sekretaris'].includes(event.sub_ketua);
+                                        %>
+                                        <select id="select_sub_ketua" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white" onchange="toggleCustom('pendamping')">
+                                            <option value="Bendahara" <%= event.sub_ketua === 'Bendahara' ? 'selected' : '' %>>Bendahara</option>
+                                            <option value="Sekretaris" <%= event.sub_ketua === 'Sekretaris' ? 'selected' : '' %>>Sekretaris</option>
+                                            <option value="Custom" <%= !isSubStandard ? 'selected' : '' %>>Lainnya (Custom)...</option>
+                                        </select>
+                                        <input type="text" id="input_sub_ketua" name="sub_ketua" value="<%= event.sub_ketua || 'Bendahara' %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm mt-2 <%= isSubStandard ? 'hidden' : '' %>" placeholder="Ketik nama jabatan...">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Nama Lengkap Pendamping</label>
+                                        <input type="text" name="nama_sub_ketua" value="<%= event.nama_sub_ketua || '' %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" placeholder="Contoh: Bpk. Budi S.Pd" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="flex gap-3 pt-4">
+                            <a href="/admin/zakat/laporan" class="w-1/3 py-3 text-center bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition text-sm">
+                                Batal
+                            </a>
+                            <button type="submit" class="w-2/3 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-md transition text-sm">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- SCRIPT PENDUKUNG DROPDOWN CUSTOM -->
+    <script>
+        function toggleCustom(target) {
+            if (target === 'ketua') {
+                const select = document.getElementById('select_jabatan_ketua');
+                const input = document.getElementById('input_jabatan_ketua');
+                if (select.value === 'Custom') {
+                    input.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
+                } else {
+                    input.classList.add('hidden');
+                    input.value = select.value;
+                }
+            } else if (target === 'pendamping') {
+                const select = document.getElementById('select_sub_ketua');
+                const input = document.getElementById('input_sub_ketua');
+                if (select.value === 'Custom') {
+                    input.classList.remove('hidden');
+                    input.value = '';
+                    input.focus();
+                } else {
+                    input.classList.add('hidden');
+                    input.value = select.value;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<%- include('../partials/header') %>
+
+<% 
+  // Fungsi EJS untuk render pertama kali di server
+  function formatWaktuEJS(utcString) {
+      if (!utcString) return '-';
+      const userTimeZone = (typeof appSettings !== 'undefined' && appSettings.timezone) ? appSettings.timezone : 'Asia/Jakarta';
+      const isoString = utcString.replace(' ', 'T') + 'Z';
+      const date = new Date(isoString);
+      
+      return new Intl.DateTimeFormat('id-ID', {
+          timeZone: userTimeZone,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false
+      }).format(date).replace(/\./g, ':');
+  }
+
+  // Fungsi EJS untuk format Kg (titik desimal jadi koma, tanpa pemisah ribuan)
+  function formatKg(angka) {
+      if (angka === null || angka === undefined || isNaN(angka)) return "0";
+      return new Intl.NumberFormat('id-ID', {
+          maximumFractionDigits: 3,
+          useGrouping: false
+      }).format(angka);
+  }
+%>
+
+<div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- Top Bar: Judul & Dropdown Pilih Agenda -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Dashboard Rekapitulasi</span>
+            <h2 class="text-2xl font-bold text-gray-800 mt-2">Laporan Penerimaan Zakat</h2>
+            <p class="text-gray-500 text-sm">Pantau pengumpulan zakat dan infaq secara real-time.</p>
+        </div>
+
+        <!-- Dropdown Pemilihan Agenda -->
+        <% if (semuaEvent && semuaEvent.length > 0) { %>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <label class="text-sm font-semibold text-gray-600 whitespace-nowrap">Pilih Agenda:</label>
+                <select id="dropdown-agenda" onchange="gantiAgenda(this.value)" class="border border-gray-300 rounded-xl px-4 py-2.5 bg-white font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-500 outline-none w-full md:w-64">
+                    <% semuaEvent.forEach(ev => { %>
+                        <option value="<%= ev.id %>" <%= eventPilihan && eventPilihan.id === ev.id ? 'selected' : '' %>>
+                            <%= ev.nama_event %> (<%= ev.status %>)
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        <% } %>
+    </div>
+
+    <% if (!eventPilihan) { %>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center space-y-4">
+            <p class="text-gray-500 font-medium">Belum ada agenda atau data transaksi yang tercatat.</p>
+            <a href="/admin/zakat/input" class="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 transition-colors">Buat Setup Agenda Baru</a>
+        </div>
+    <% } else { %>
+
+        <!-- KARTU STATISTIK MASING-MASING JENIS ZAKAT -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <% 
+                const daftarJenis = ['Zakat Fitrah', 'Zakat Mal', 'Infaq / Sedekah', 'Fidyah'];
+                daftarJenis.forEach(namaJenis => {
+                    let data = rekapPerJenis[namaJenis] || { jiwa: 0, beras: 0, infaqBeras: 0, uang: 0, infaqUang: 0 };
+                    // Menentukan label satuan: Fidyah menggunakan 'Hari', selebihnya 'Jiwa'
+                    let satuanLabel = (namaJenis === 'Fidyah') ? 'Hari' : 'Jiwa';
+            %>
+                <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-800"><%= namaJenis %></span>
+                        <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-md">
+                            <span id="jiwa-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= data.jiwa %></span> <span id="label-satuan-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= satuanLabel %></span>
+                        </span>
+                    </div>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Beras:</span>
+                            <strong class="text-gray-800"><span id="beras-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= formatKg(data.beras) %></span> Kg</strong>
+                        </div>
+                        <div class="flex justify-between text-xs text-emerald-600">
+                            <span>Infaq Beras:</span>
+                            <span>+<span id="infaqberas-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= formatKg(data.infaqBeras) %></span> Kg</span>
+                        </div>
+                        <div class="flex justify-between pt-1 border-t border-gray-100">
+                            <span class="text-gray-500">Uang:</span>
+                            <strong class="text-gray-800">Rp <span id="uang-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= Number(data.uang).toLocaleString('id-ID') %></span></strong>
+                        </div>
+                        <div class="flex justify-between text-xs text-emerald-600">
+                            <span>Infaq Uang:</span>
+                            <span>+Rp <span id="inquang-<%= namaJenis.replace(/[^a-zA-Z]/g, '') %>"><%= Number(data.infaqUang).toLocaleString('id-ID') %></span></span>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Tabel Detail Transaksi -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-lg">Daftar Transaksi Masuk</h3>
+                <span class="text-xs text-gray-400 italic">Auto-refresh (setiap 5 detik)</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4">Waktu</th>
+                            <th class="p-4">Nama Muzakki</th>
+                            <th class="p-4">Jenis Zakat</th>
+                            <th class="p-4">Metode</th>
+                            <th class="p-4 text-center">Jumlah</th>
+                            <th class="p-4 text-center">Beras</th>
+                            <th class="p-4 text-center">Uang</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-transaksi-body" class="divide-y divide-gray-100 text-sm">
+                        <% if (transaksi.length === 0) { %>
+                            <tr>
+                                <td colspan="7" class="p-6 text-center text-gray-400 italic">Belum ada transaksi pada agenda ini.</td>
+                            </tr>
+                        <% } else { %>
+                            <% transaksi.forEach(t => { %>
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="p-4 text-gray-500 text-xs"><%= formatWaktuEJS(t.tanggal || t.tanggal_input) %></td>
+                                    <td class="p-4 font-semibold text-gray-800"><%= t.nama_penyetor %></td>
+                                    <td class="p-4"><span class="bg-emerald-50 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-bold"><%= t.jenis_zakat %></span></td>
+                                    <td class="p-4"><span class="text-emerald-800 font-bold text-xs"><%= t.jenis_bayar %></span></td>
+                                    
+                                    <!-- Kolom Jumlah Jiwa / Hari dengan pengecekan Fidyah -->
+                                    <td class="p-4 text-center text-gray-600">
+                                        <% if (t.jumlah_jiwa > 0) { %>
+                                            <%= t.jumlah_jiwa %> <%= t.jenis_zakat === 'Fidyah' ? 'Hari' : 'Jiwa' %>
+                                        <% } else { %>
+                                            -
+                                        <% } %>
+                                    </td>
+
+                                    <td class="p-4 text-right">
+                                        <span class="font-bold text-emerald-800"><%= formatKg(t.jumlah_beras) %> Kg</span>
+                                        <% if(t.infaq_beras > 0) { %> <br><span class="text-xs text-emerald-600 font-medium">+<%= formatKg(t.infaq_beras) %> Kg infaq</span> <% } %>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <span class="font-bold text-emerald-800">Rp <%= Number(t.jumlah_uang).toLocaleString('id-ID') %></span>
+                                        <% if(t.infaq_uang > 0) { %> <br><span class="text-xs text-emerald-600 font-medium">+Rp <%= Number(t.infaq_uang).toLocaleString('id-ID') %> infaq</span> <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    <% } %>
+
+</div>
+
+<script>
+    const eventIdAktif = "<%= eventPilihan ? eventPilihan.id : '' %>";
+
+    // Helper JavaScript untuk format Waktu (AJAX)
+    function formatWaktuJS(utcString) {
+        if (!utcString) return '-';
+        const userTimeZone = '<%= (typeof appSettings !== "undefined" && appSettings.timezone) ? appSettings.timezone : "Asia/Jakarta" %>';
+        const isoString = utcString.replace(' ', 'T') + 'Z';
+        const date = new Date(isoString);
+        
+        return new Intl.DateTimeFormat('id-ID', {
+            timeZone: userTimeZone,
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        }).format(date).replace(/\./g, ':');
+    }
+
+    // Helper JavaScript untuk format Kg di Sisi Klien (AJAX)
+    function formatKgJS(angka) {
+        if (angka === null || angka === undefined || isNaN(angka)) return "0";
+        return new Intl.NumberFormat('id-ID', {
+            maximumFractionDigits: 3,
+            useGrouping: false
+        }).format(angka);
+    }
+
+    function gantiAgenda(id) {
+        window.location.href = `/admin/zakat?event_id=${id}`;
+    }
+
+    // Auto-refresh data secara background halus tanpa kedip
+    async function fetchRekapData() {
+        if (!eventIdAktif) return;
+        try {
+            const response = await fetch(`/admin/zakat/api/rekap?event_id=${eventIdAktif}`);
+            const data = await response.json();
+            
+            if (data.error) return;
+
+            // Update masing-masing kartu statistik per jenis
+            const jenisKategori = ['Zakat Fitrah', 'Zakat Mal', 'Infaq / Sedekah', 'Fidyah'];
+            jenisKategori.forEach(namaJenis => {
+                let key = namaJenis.replace(/[^a-zA-Z]/g, '');
+                let d = data.rekapPerJenis[namaJenis] || { jiwa: 0, beras: 0, infaqBeras: 0, uang: 0, infaqUang: 0 };
+                
+                document.getElementById(`jiwa-${key}`).innerText = d.jiwa;
+                document.getElementById(`beras-${key}`).innerText = formatKgJS(d.beras);
+                document.getElementById(`infaqberas-${key}`).innerText = formatKgJS(d.infaqBeras);
+                document.getElementById(`uang-${key}`).innerText = Number(d.uang).toLocaleString('id-ID');
+                document.getElementById(`inquang-${key}`).innerText = Number(d.infaqUang).toLocaleString('id-ID');
+            });
+
+            // Update Tabel Transaksi
+            const tbody = document.getElementById('tabel-transaksi-body');
+            if (data.transaksi.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-400 italic">Belum ada transaksi pada agenda ini.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            data.transaksi.forEach(t => {
+                let satuanRow = (t.jumlah_jiwa > 0) ? `${t.jumlah_jiwa} ${t.jenis_zakat === 'Fidyah' ? 'Hari' : 'Jiwa'}` : '-';
+
+                html += `
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="p-4 text-gray-500 text-xs">${formatWaktuJS(t.tanggal || t.tanggal_input)}</td>
+                        <td class="p-4 font-semibold text-gray-800">${t.nama_penyetor}</td>
+                        <td class="p-4"><span class="bg-emerald-50 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-bold">${t.jenis_zakat}</span></td>
+                        <td class="p-4"><span class="text-emerald-800 font-bold text-xs">${t.jenis_bayar}</span></td>
+                        <td class="p-4 text-center text-gray-600">${satuanRow}</td>
+                        <td class="p-4 text-right">
+                            <span class="font-bold text-emerald-800">${formatKgJS(t.jumlah_beras)} Kg</span>
+                            ${t.infaq_beras > 0 ? `<br><span class="text-xs text-emerald-600 font-medium">+${formatKgJS(t.infaq_beras)} Kg infaq</span>` : ''}
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="font-bold text-emerald-800">Rp ${Number(t.jumlah_uang).toLocaleString('id-ID')}</span>
+                            ${t.infaq_uang > 0 ? `<br><span class="text-xs text-emerald-600 font-medium">+Rp ${Number(t.infaq_uang).toLocaleString('id-ID')} infaq</span>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+
+        } catch (err) {
+            console.error("Gagal auto-refresh data:", err);
+        }
+    }
+
+    if (eventIdAktif) {
+        setInterval(fetchRekapData, 5000);
+    }
+</script>
+
+<%- include('../partials/footer') %>

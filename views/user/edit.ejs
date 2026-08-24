@@ -1,0 +1,59 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-xl mx-auto space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-2xl font-bold text-gray-800">Edit Pengguna</h2>
+        <p class="text-gray-500 text-sm">Perbarui informasi akun atau ubah kata sandi.</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <form action="/admin/users/edit/<%= user.id %>" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Nama Lengkap</label>
+                <input type="text" name="nama_lengkap" value="<%= user.nama_lengkap %>" required class="w-full border border-gray-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Username</label>
+                <input type="text" name="username" value="<%= user.username %>" required class="w-full border border-gray-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Password Baru <span class="text-xs text-gray-400 font-normal">(Kosongkan jika tidak ingin mengubah password)</span></label>
+                <input type="password" name="password" placeholder="Biarkan kosong jika tetap" class="w-full border border-gray-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Hak Akses (Role)</label>
+                <select name="role" class="w-full border border-gray-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white font-semibold text-emerald-800">
+                    <option value="Admin" <%= user.role === 'Admin' ? 'selected' : '' %>>Admin</option>
+                    <option value="Super Admin" <%= user.role === 'Super Admin' ? 'selected' : '' %>>Super Admin</option>
+                    <option value="Petugas" <%= user.role === 'Petugas' ? 'selected' : '' %>>Petugas Input</option>
+                </select>
+            </div>
+
+            <div class="space-y-2 border border-gray-200 p-4 rounded-xl bg-gray-50">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Hak Akses Modul:</label>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <% allModules.forEach(mod => { %>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="permissions" value="<%= mod.key %>" 
+                                <%= (typeof user !== 'undefined' && user.permissions && user.permissions.includes(mod.key)) ? 'checked' : (mod.key === 'dashboard' || mod.key === 'zakat' ? 'checked' : '') %> 
+                                class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span><%= mod.label %></span>
+                        </label>
+                    <% }) %>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <a href="/admin/users" class="text-sm font-semibold text-gray-500 hover:text-gray-700">← Batal</a>
+                <button type="submit" class="py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+                    Perbarui Pengguna
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

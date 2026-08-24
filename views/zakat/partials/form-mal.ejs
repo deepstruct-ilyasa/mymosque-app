@@ -1,0 +1,192 @@
+<div id="sub-form-ZakatMal" class="sub-form-section space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Pembayaran Mal</label>
+            <select id="mal_jenis_bayar" name="jenis_bayar" onchange="ZakatMal.gantiModeBayar()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-semibold text-blue-800">
+                <option value="Uang">Uang (Tunai / Tabungan)</option>
+                <option value="Beras">Barang / Komoditas (Beras)</option>
+                <option value="Kombinasi">Kombinasi (Uang & Barang)</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan Harta</label>
+            <input type="text" name="keterangan_mal" placeholder="Contoh: Tabungan / Perniagaan / Emas" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+        </div>
+    </div>
+
+    <!-- 1. MODE UANG SAJA -->
+    <div id="mal_section_uang" class="space-y-4 bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Total Nilai Harta (Rp)</label>
+            <input type="number" id="mal_total_uang" oninput="ZakatMal.kalkulasiUang()" class="w-full border border-gray-300 rounded-xl p-3.5 font-bold text-blue-700 bg-white" placeholder="Contoh: 90000000">
+        </div>
+        
+        <!-- Input tersembunyi yang menyimpan hasil 2.5% dan dikirim ke backend -->
+        <input type="hidden" id="mal_hasil_uang_zakat" value="0">
+
+        <div class="bg-white p-4 rounded-xl border border-blue-200">
+            <p id="mal_teks_uang" class="text-sm font-bold text-blue-800">Wajib Zakat (2.5%): Rp 0</p>
+            <p id="mal_warning_uang" class="text-xs font-bold text-amber-600 mt-2 hidden">⚠️ Peringatan: Harta di bawah Nisab, namun transaksi tetap dicatat sebagai Zakat Mal.</p>
+        </div>
+    </div>
+
+    <!-- 2. MODE BERAS / KOMODITAS -->
+    <div id="mal_section_beras" class="hidden space-y-4 bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Total Nilai Harta Keseluruhan (Rp)</label>
+                <input type="number" id="mal_total_harta_beras" oninput="ZakatMal.kalkulasiBeras()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="Contoh: 90000000">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Beras per Kg (Rp)</label>
+                <input type="number" id="mal_harga_beras" oninput="ZakatMal.kalkulasiBeras()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="Contoh: 15000">
+            </div>
+        </div>
+        
+        <!-- Input tersembunyi yang akan dikirim ke backend sebagai jumlah_beras -->
+        <input type="hidden" id="mal_hasil_beras_kg" value="0">
+
+        <div class="bg-white p-4 rounded-xl border border-blue-200 space-y-2">
+            <p id="mal_teks_beras_rupiah" class="text-sm font-bold text-blue-800">Wajib Zakat (2.5%): Rp 0</p>
+            <p id="mal_teks_beras_kg" class="text-sm font-bold text-emerald-800">Setara dengan: 0 Kg Beras</p>
+            <p id="mal_warning_beras" class="text-xs font-bold text-amber-600 mt-2 hidden">⚠️ Peringatan: Harta di bawah Nisab, namun transaksi tetap dicatat sebagai Zakat Mal.</p>
+        </div>
+    </div>
+
+    <!-- 3. MODE KOMBINASI (Uang & Barang) -->
+    <div id="mal_section_kombinasi" class="hidden space-y-4 bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Total Nilai Harta Keseluruhan (Rp)</label>
+                <input type="number" id="mal_kombo_total_harta" oninput="ZakatMal.kalkulasiKombo()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="Total Harta">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Beras per Kg (Rp)</label>
+                <input type="number" id="mal_kombo_harga_beras" oninput="ZakatMal.kalkulasiKombo()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="Contoh: 15000">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bayar Beras (Kg)</label>
+                <input type="number" step="0.001" id="mal_kombo_kg" name="jumlah_beras" oninput="ZakatMal.isiBerasDulu()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="0 Kg">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Bayar Uang Tunai (Rp)</label>
+                <input type="number" id="mal_kombo_rupiah" name="jumlah_uang" oninput="ZakatMal.isiUangDulu()" class="w-full border p-3 rounded-xl font-bold bg-white" placeholder="Rp 0">
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-blue-200 space-y-1">
+            <p id="mal_teks_kombo_target" class="text-sm font-bold text-blue-900">Target Wajib Zakat (2.5%): Rp 0</p>
+            <p id="mal_teks_kombo_sisa" class="text-xs font-semibold text-gray-600">Sisa / Status: Sesuai</p>
+            <p id="mal_warning_kombo" class="text-xs font-bold text-amber-600 mt-2 hidden">⚠️ Peringatan: Harta di bawah Nisab, namun transaksi tetap dicatat sebagai Zakat Mal.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.ZakatMal = {
+        nisab: Number(<%= event.nisab_zakat_mal || 85000000 %>),
+        
+        gantiModeBayar: function() {
+            const jenis = document.getElementById('mal_jenis_bayar').value;
+            
+            document.getElementById('mal_section_uang').classList.toggle('hidden', jenis !== 'Uang');
+            document.getElementById('mal_section_beras').classList.toggle('hidden', jenis !== 'Beras');
+            document.getElementById('mal_section_kombinasi').classList.toggle('hidden', jenis !== 'Kombinasi');
+
+            // Reset semua atribut name di dalam mal
+            document.querySelectorAll('#sub-form-ZakatMal input').forEach(i => {
+                if (i.name !== 'keterangan_mal') i.removeAttribute('name');
+            });
+
+            if (jenis === 'Uang') {
+                // PERBAIKAN: Berikan name="jumlah_uang" pada input tersembunyi hasil zakat (2.5%)
+                document.getElementById('mal_hasil_uang_zakat').setAttribute('name', 'jumlah_uang');
+            } else if (jenis === 'Beras') {
+                document.getElementById('mal_hasil_beras_kg').setAttribute('name', 'jumlah_beras');
+            } else if (jenis === 'Kombinasi') {
+                document.getElementById('mal_kombo_kg').setAttribute('name', 'jumlah_beras');
+                document.getElementById('mal_kombo_rupiah').setAttribute('name', 'jumlah_uang');
+            }
+        },
+
+        kalkulasiUang: function() {
+            const harta = parseFloat(document.getElementById('mal_total_uang').value) || 0;
+            const zakat = harta * 0.025; // Hasil 2.5%
+            
+            document.getElementById('mal_teks_uang').innerText = `Wajib Zakat (2.5%): Rp ${zakat.toLocaleString('id-ID')}`;
+            
+            // Masukkan hasil 2.5% ke input tersembunyi agar masuk database sebagai nilai zakat
+            document.getElementById('mal_hasil_uang_zakat').value = zakat;
+
+            document.getElementById('mal_warning_uang').classList.toggle('hidden', harta >= this.nisab);
+        },
+
+        kalkulasiBeras: function() {
+            const harta = parseFloat(document.getElementById('mal_total_harta_beras').value) || 0;
+            const hargaBeras = parseFloat(document.getElementById('mal_harga_beras').value) || 0;
+            const zakatRupiah = harta * 0.025;
+
+            let kgBeras = 0;
+            if (hargaBeras > 0) {
+                kgBeras = zakatRupiah / hargaBeras;
+            }
+
+            document.getElementById('mal_teks_beras_rupiah').innerText = `Wajib Zakat (2.5%): Rp ${zakatRupiah.toLocaleString('id-ID')}`;
+            document.getElementById('mal_teks_beras_kg').innerText = `Setara dengan: ${kgBeras.toFixed(3)} Kg Beras`;
+            
+            // Simpan nilai kg ke input tersembunyi ber-name="jumlah_beras"
+            document.getElementById('mal_hasil_beras_kg').value = kgBeras.toFixed(3);
+
+            document.getElementById('mal_warning_beras').classList.toggle('hidden', harta >= this.nisab);
+        },
+
+        kalkulasiKombo: function() {
+            const totalHarta = parseFloat(document.getElementById('mal_kombo_total_harta').value) || 0;
+            const targetY = totalHarta * 0.025;
+
+            document.getElementById('mal_teks_kombo_target').innerText = `Target Wajib Zakat (2.5%): Rp ${targetY.toLocaleString('id-ID')}`;
+            document.getElementById('mal_warning_kombo').classList.toggle('hidden', totalHarta >= this.nisab);
+            
+            this.isiBerasDulu();
+        },
+
+        isiBerasDulu: function() {
+            const totalHarta = parseFloat(document.getElementById('mal_kombo_total_harta').value) || 0;
+            const targetY = totalHarta * 0.025;
+            const hargaBeras = parseFloat(document.getElementById('mal_kombo_harga_beras').value) || 0;
+            const inputKg = parseFloat(document.getElementById('mal_kombo_kg').value) || 0;
+
+            if (hargaBeras > 0) {
+                const nilaiBerasRupiah = inputKg * hargaBeras;
+                const sisaRupiah = targetY - nilaiBerasRupiah;
+                document.getElementById('mal_kombo_rupiah').value = sisaRupiah > 0 ? sisaRupiah.toFixed(0) : 0;
+                document.getElementById('mal_teks_kombo_sisa').innerText = `Status: Beras (${inputKg} Kg = Rp ${nilaiBerasRupiah.toLocaleString()}) + Uang (Rp ${sisaRupiah > 0 ? sisaRupiah.toLocaleString() : 0})`;
+            } else {
+                document.getElementById('mal_teks_kombo_sisa').innerText = `⚠️ Harap isi Harga Beras per Kg terlebih dahulu!`;
+            }
+        },
+
+        isiUangDulu: function() {
+            const totalHarta = parseFloat(document.getElementById('mal_kombo_total_harta').value) || 0;
+            const targetY = totalHarta * 0.025;
+            const hargaBeras = parseFloat(document.getElementById('mal_kombo_harga_beras').value) || 0;
+            const inputUang = parseFloat(document.getElementById('mal_kombo_rupiah').value) || 0;
+
+            if (hargaBeras > 0) {
+                const sisaRupiah = targetY - inputUang;
+                const kgDibutuhkan = sisaRupiah > 0 ? sisaRupiah / hargaBeras : 0;
+                document.getElementById('mal_kombo_kg').value = kgDibutuhkan.toFixed(3);
+                document.getElementById('mal_teks_kombo_sisa').innerText = `Status: Uang (Rp ${inputUang.toLocaleString()}) + Beras (${kgDibutuhkan.toFixed(3)} Kg)`;
+            } else {
+                document.getElementById('mal_teks_kombo_sisa').innerText = `⚠️ Harap isi Harga Beras per Kg terlebih dahulu!`;
+            }
+        },
+
+        validasi: function() {
+            return true;
+        }
+    };
+
+    ZakatMal.gantiModeBayar();
+</script>

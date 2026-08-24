@@ -1,0 +1,198 @@
+<div id="sub-form-ZakatFitrah" class="sub-form-section space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Pembayaran</label>
+            <select id="fitrah_jenis_bayar" name="jenis_bayar" onchange="ZakatFitrah.gantiModeBayar()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none bg-white font-semibold text-emerald-800">
+                <option value="Uang">Uang</option>
+                <option value="Beras">Beras</option>
+                <option value="Kombinasi">Kombinasi</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- MODE TUNGGAL (UANG / BERAS) -->
+    <div id="fitrah_section_tunggal" class="space-y-6 bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jiwa</label>
+                <input type="number" id="fitrah_jiwa_tunggal" value="1" min="1" oninput="ZakatFitrah.kalkulasiTunggal()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah <span class="text-xs font-normal text-gray-500">(Bisa di-custom jika ada infaq)</span></label>
+                <input type="number" step="0.1" id="fitrah_jumlah_tunggal" oninput="ZakatFitrah.cekMinimalTunggal()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-emerald-200">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kalkulasi Otomatis & Peringatan</span>
+            <p id="fitrah_teks_kalkulasi_tunggal" class="text-sm font-bold text-emerald-800">Jiwa x std = jumlah</p>
+            <p id="fitrah_warning_tunggal" class="text-xs font-bold text-red-600 mt-1 hidden">⚠️ Peringatan: Pembayaran di bawah standar minimum wajib!</p>
+        </div>
+    </div>
+
+    <!-- MODE KOMBINASI -->
+    <div id="fitrah_section_kombinasi" class="hidden space-y-6 bg-emerald-50/50 border border-emerald-100 p-5 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-emerald-200/60">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jiwa (beras)</label>
+                <input type="number" id="fitrah_jiwa_beras" name="jiwa_beras" value="0" min="0" oninput="ZakatFitrah.kalkulasiKombinasi()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Beras (Kg)</label>
+                <input type="number" step="0.001" id="fitrah_jumlah_beras_kombo" name="jumlah_beras" oninput="ZakatFitrah.cekMinimalKombo()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jiwa (uang)</label>
+                <input type="number" id="fitrah_jiwa_uang" name="jiwa_uang" value="0" min="0" oninput="ZakatFitrah.kalkulasiKombinasi()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Uang (Rp)</label>
+                <input type="number" id="fitrah_jumlah_uang_kombo" name="jumlah_uang" oninput="ZakatFitrah.cekMinimalKombo()" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 bg-white">
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-emerald-200 space-y-1">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Kalkulasi Kombinasi & Peringatan</span>
+            <p id="fitrah_teks_kalkulasi_kombinasi" class="text-sm font-bold text-emerald-800">(Jiwa x std beras = jumlah) + (Jiwa x std uang = jumlah)</p>
+            <p id="fitrah_warning_kombo_beras" class="text-xs font-bold text-red-600 hidden">⚠️ Peringatan Beras: Pembayaran kurang dari standar minimum wajib!</p>
+            <p id="fitrah_warning_kombo_uang" class="text-xs font-bold text-red-600 hidden">⚠️ Peringatan Uang: Pembayaran kurang dari standar minimum wajib!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.ZakatFitrah = {
+        stdUang: Number(<%= event.standar_fitrah_uang || event.standar_uang %>),
+        stdBeras: Number(<%= event.standar_fitrah_beras || event.standar_beras %>),
+
+        gantiModeBayar: function() {
+            const jenis = document.getElementById('fitrah_jenis_bayar').value;
+            const secTunggal = document.getElementById('fitrah_section_tunggal');
+            const secKombo = document.getElementById('fitrah_section_kombinasi');
+            const inputJumlahTunggal = document.getElementById('fitrah_jumlah_tunggal');
+            const inputJiwaTunggal = document.getElementById('fitrah_jiwa_tunggal');
+
+            if (jenis === 'Kombinasi') {
+                secTunggal.classList.add('hidden');
+                secKombo.classList.remove('hidden');
+
+                inputJiwaTunggal.removeAttribute('name');
+                inputJumlahTunggal.removeAttribute('name');
+
+                document.getElementById('fitrah_jiwa_beras').value = 1;
+                document.getElementById('fitrah_jiwa_uang').value = 1;
+                
+                // Menggunakan toFixed(3) untuk konsistensi beras
+                document.getElementById('fitrah_jumlah_beras_kombo').value = (1 * this.stdBeras).toFixed(3);
+                document.getElementById('fitrah_jumlah_uang_kombo').value = 1 * this.stdUang;
+                
+                this.kalkulasiKombinasi();
+            } else {
+                secTunggal.classList.remove('hidden');
+                secKombo.classList.add('hidden');
+
+                inputJiwaTunggal.setAttribute('name', 'jumlah_jiwa');
+                
+                if (jenis === 'Beras') {
+                    inputJumlahTunggal.setAttribute('name', 'jumlah_beras');
+                } else {
+                    inputJumlahTunggal.setAttribute('name', 'jumlah_uang');
+                }
+
+                const jiwa = parseInt(inputJiwaTunggal.value) || 1;
+                inputJumlahTunggal.value = (jenis === 'Beras') ? (jiwa * this.stdBeras).toFixed(3) : (jiwa * this.stdUang);
+
+                this.kalkulasiTunggal();
+            }
+        },
+
+        kalkulasiTunggal: function() {
+            const jenis = document.getElementById('fitrah_jenis_bayar').value;
+            const jiwa = parseInt(document.getElementById('fitrah_jiwa_tunggal').value) || 0;
+            const inputJumlah = document.getElementById('fitrah_jumlah_tunggal');
+            const teksKalkulasi = document.getElementById('fitrah_teks_kalkulasi_tunggal');
+
+            const minimal = jenis === 'Beras' ? (jiwa * this.stdBeras) : (jiwa * this.stdUang);
+            
+            if (!inputJumlah.value || Number(inputJumlah.value) < minimal) {
+                inputJumlah.value = (jenis === 'Beras' ? minimal.toFixed(3) : minimal);
+            }
+
+            if (jenis === 'Beras') {
+                teksKalkulasi.innerText = `${jiwa} Jiwa x ${this.stdBeras} Kg = ${(jiwa * this.stdBeras).toFixed(3)} Kg Beras (Wajib Minimum)`;
+            } else {
+                teksKalkulasi.innerText = `${jiwa} Jiwa x Rp ${this.stdUang.toLocaleString('id-ID')} = Rp ${(jiwa * this.stdUang).toLocaleString('id-ID')} (Wajib Minimum)`;
+            }
+            this.cekMinimalTunggal();
+        },
+
+        cekMinimalTunggal: function() {
+            const jenis = document.getElementById('fitrah_jenis_bayar').value;
+            const jiwa = parseInt(document.getElementById('fitrah_jiwa_tunggal').value) || 0;
+            const aktual = parseFloat(document.getElementById('fitrah_jumlah_tunggal').value) || 0;
+            const minimal = jenis === 'Beras' ? (jiwa * this.stdBeras) : (jiwa * this.stdUang);
+
+            document.getElementById('fitrah_warning_tunggal').classList.toggle('hidden', aktual >= (jenis === 'Beras' ? minimal.toFixed(3) : minimal));
+        },
+
+        kalkulasiKombinasi: function() {
+            const jiwaBeras = parseInt(document.getElementById('fitrah_jiwa_beras').value) || 0;
+            const jiwaUang = parseInt(document.getElementById('fitrah_jiwa_uang').value) || 0;
+
+            const minBeras = jiwaBeras * this.stdBeras;
+            const minUang = jiwaUang * this.stdUang;
+
+            const inputBerasKombo = document.getElementById('fitrah_jumlah_beras_kombo');
+            const inputUangKombo = document.getElementById('fitrah_jumlah_uang_kombo');
+
+            if (!inputBerasKombo.value || Number(inputBerasKombo.value) < minBeras) {
+                inputBerasKombo.value = minBeras.toFixed(3);
+            }
+            if (!inputUangKombo.value || Number(inputUangKombo.value) < minUang) {
+                inputUangKombo.value = minUang;
+            }
+
+            document.getElementById('fitrah_teks_kalkulasi_kombinasi').innerText = 
+                `(${jiwaBeras} Jiwa x ${this.stdBeras} Kg = min ${minBeras.toFixed(3)} Kg) + (${jiwaUang} Jiwa x Rp ${this.stdUang.toLocaleString('id-ID')} = min Rp ${minUang.toLocaleString('id-ID')})`;
+            
+            this.cekMinimalKombo();
+        },
+
+        cekMinimalKombo: function() {
+            const jiwaBeras = parseInt(document.getElementById('fitrah_jiwa_beras').value) || 0;
+            const jiwaUang = parseInt(document.getElementById('fitrah_jiwa_uang').value) || 0;
+            const aktualBeras = parseFloat(document.getElementById('fitrah_jumlah_beras_kombo').value) || 0;
+            const aktualUang = parseFloat(document.getElementById('fitrah_jumlah_uang_kombo').value) || 0;
+
+            document.getElementById('fitrah_warning_kombo_beras').classList.toggle('hidden', aktualBeras >= (jiwaBeras * this.stdBeras));
+            document.getElementById('fitrah_warning_kombo_uang').classList.toggle('hidden', aktualUang >= (jiwaUang * this.stdUang));
+        },
+
+        validasi: function() {
+            const jenis = document.getElementById('fitrah_jenis_bayar').value;
+            let kurangBayar = false;
+
+            if (jenis !== 'Kombinasi') {
+                const jiwa = parseInt(document.getElementById('fitrah_jiwa_tunggal').value) || 0;
+                const aktual = parseFloat(document.getElementById('fitrah_jumlah_tunggal').value) || 0;
+                const minimal = jenis === 'Beras' ? (jiwa * this.stdBeras) : (jiwa * this.stdUang);
+                
+                if (aktual < minimal) kurangBayar = true;
+            } else {
+                const jiwaBeras = parseInt(document.getElementById('fitrah_jiwa_beras').value) || 0;
+                const jiwaUang = parseInt(document.getElementById('fitrah_jiwa_uang').value) || 0;
+                const aktualBeras = parseFloat(document.getElementById('fitrah_jumlah_beras_kombo').value) || 0;
+                const aktualUang = parseFloat(document.getElementById('fitrah_jumlah_uang_kombo').value) || 0;
+
+                if (aktualBeras < (jiwaBeras * this.stdBeras) || aktualUang < (jiwaUang * this.stdUang)) {
+                    kurangBayar = true;
+                }
+            }
+
+            return !kurangBayar;
+        }
+    };
+</script>

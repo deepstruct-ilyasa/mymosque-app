@@ -1,0 +1,50 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Pusat Arsip & Laporan</span>
+            <h2 class="text-2xl font-bold text-gray-800 mt-2">Daftar Agenda Zakat</h2>
+            <p class="text-gray-500 text-sm">Pilih agenda di bawah ini untuk melihat dan mencetak dokumen laporan resmi.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+        <% if (semuaEvent.length === 0) { %>
+            <div class="bg-white p-8 rounded-2xl text-center text-gray-400 border border-gray-100 font-medium">
+                Belum ada agenda atau periode zakat yang dibuat.
+            </div>
+        <% } else { %>
+            <% semuaEvent.forEach(ev => { %>
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-emerald-200 transition-all">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-lg font-bold text-gray-800"><%= ev.nama_event %></h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold <%= ev.status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' %>">
+                                <%= ev.status %>
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-500"><%= ev.deskripsi || 'Tidak ada deskripsi agenda.' %></p>
+                        <div class="text-xs text-gray-400 pt-1 flex gap-4">
+                            <span>Std. Beras Fitrah: <strong><%= ev.standar_fitrah_beras %> Kg</strong></span>
+                            <span>Std. Uang Fitrah: <strong>Rp <%= Number(ev.standar_fitrah_uang).toLocaleString('id-ID') %></strong></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <a href="/admin/zakat/laporan/edit/<%= ev.id %>" class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow transition flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            Edit
+                        </a>
+                        <a href="/admin/zakat/laporan/cetak/<%= ev.id %>" target="_blank" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Cetak Laporan
+                        </a>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

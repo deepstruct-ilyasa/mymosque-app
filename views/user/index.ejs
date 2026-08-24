@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+        <div>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Manajemen Sistem</span>
+            <h2 class="text-2xl font-bold text-gray-800 mt-2">Daftar Pengguna Aplikasi</h2>
+            <p class="text-gray-500 text-sm">Kelola akun admin dan petugas yang memiliki akses ke sistem MyMosque.</p>
+        </div>
+        <a href="/admin/users/tambah" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+            + Tambah Pengguna
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+                    <th class="p-4">No</th>
+                    <th class="p-4">Nama Lengkap</th>
+                    <th class="p-4">Username</th>
+                    <th class="p-4">Role / Hak Akses</th>
+                    <th class="p-4 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-sm">
+                <% if (!users || users.length === 0) { %>
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-gray-400 italic">Belum ada pengguna terdaftar.</td>
+                    </tr>
+                <% } else { %>
+                    <% users.forEach((u, index) => { %>
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="p-4 text-gray-500"><%= index + 1 %></td>
+                            <td class="p-4 font-semibold text-gray-800"><%= u.nama_lengkap || '-' %></td>
+                            <td class="p-4 text-gray-600"><%= u.username %></td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold <%= u.role === 'Super Admin' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800' %>">
+                                    <%= u.role || 'Admin' %>
+                                </span>
+                            </td>
+                            <td class="p-4 text-center space-x-2">
+                                <a href="/admin/users/edit/<%= u.id %>" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition">Edit</a>
+                                <form action="/admin/users/hapus/<%= u.id %>" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                                    <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-lg transition">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

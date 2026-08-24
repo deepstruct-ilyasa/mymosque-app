@@ -1,0 +1,27 @@
+<div id="sub-form-InfaqSedekah" class="sub-form-section space-y-6 hidden">
+    <input type="hidden" name="jenis_bayar" value="Uang">
+    
+    <div class="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl space-y-4">
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal Infaq / Sedekah (Rp)</label>
+            <input type="number" id="infaq_jumlah" name="jumlah_uang" placeholder="Contoh: 50000" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-amber-500 outline-none font-bold text-amber-800 bg-white">
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Catatan / Peruntukan (Opsional)</label>
+            <input type="text" name="keterangan_infaq" placeholder="Contoh: Untuk operasional masjid" class="w-full border border-gray-300 rounded-xl p-3.5 focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+        </div>
+    </div>
+</div>
+
+<script>
+    window.InfaqSedekah = {
+        validasi: function() {
+            const jumlah = parseFloat(document.getElementById('infaq_jumlah').value) || 0;
+            if (jumlah <= 0) {
+                alert('Nominal infaq / sedekah harus diisi minimal lebih dari 0!');
+                return false;
+            }
+            return true;
+        }
+    };
+</script>
