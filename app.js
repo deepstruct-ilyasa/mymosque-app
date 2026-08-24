@@ -1,6 +1,24 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+
+// ==========================================
+// 1. PASTIKAN FOLDER DATABASE ADA
+// ==========================================
+const dbDir = path.join(__dirname, 'database');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+    console.log('📁 Folder database berhasil dibuat secara otomatis.');
+}
+
+const publicDir = path.join(__dirname, 'public/uploads/zakat');
+if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+    console.log('📁 Folder public/uploads/zakat berhasil dibuat secara otomatis.');
+}
+
+// Setelah folder dipastikan ada, aman untuk memuat file koneksi database
 require('./config/zakat_db');
 const settingsDb = require('./config/settings_db');
 
