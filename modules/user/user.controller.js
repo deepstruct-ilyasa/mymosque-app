@@ -102,3 +102,82 @@ exports.hapusUser = (req, res) => {
         res.redirect('/admin/users');
     });
 };
+
+// 1. Tampilkan Form Edit Profil Pengguna yang Sedang Login
+exports.formEditProfile = (req, res) => {
+    const userId = req.session.userId;
+    const isSuccess = req.query.success ? true : false; // Ambil status sukses dari query URL
+
+    usersDb.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
+        if (err || !user) {
+            return res.status(404).send("Data pengguna tidak ditemukan.");
+        }
+        res.render('user/profile', {
+            title: 'Edit Profil Saya',
+            userProfile: user,
+            error: null,
+            success: isSuccess // Lempar ke view
+        });
+    });
+};
+
+// 2. Proses Simpan Pembaruan Profil & Password
+exports.updateProfile = async (req, res) => {
+    const userId = req.session.userId;
+    const { nama_lengkap, username, password_baru } = req.body;
+
+    // Ambil data user saat ini untuk persiapan jika terjadi error (agar form tidak kosong)
+    usersDb.get("SELECT * FROM users WHERE id = ?", [userId], async (err, currentUserData) => {
+        if (err || !currentUserData) {
+            return res.status(404).send("Data pengguna tidak ditemukan.");
+        }
+
+        try {
+            if (password_baru && password_baru.trim() !== "") {
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(password_baru, saltRounds);
+
+                const sql = `UPDATE users SET nama_lengkap = ?, username = ?, password = ? WHERE id = ?`;
+                usersDb.run(sql, [nama_lengkap, username, hashedPassword, userId], (err) => {
+                    if (err) {
+                        return res.render('user/profile', {
+                            title: 'Edit Profil Saya',
+                            userProfile: currentUserData,
+                            error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).',
+                            success: false
+                        });
+                    }
+                    // Render ulang halaman profil dengan mengirimkan flag success: true
+                    return res.render('user/profile', {
+                        title: 'Edit Profil Saya',
+                        userProfile: { ...currentUserData, nama_lengkap, username },
+                        error: null,
+                        success: true
+                    });
+                });
+            } else {
+                const sql = `UPDATE users SET nama_lengkap = ?, username = ? WHERE id = ?`;
+                usersDb.run(sql, [nama_lengkap, username, userId], (err) => {
+                    if (err) {
+                        return res.render('user/profile', {
+                            title: 'Edit Profil Saya',
+                            userProfile: currentUserData,
+                            error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).',
+                            success: false
+                        });
+                    }
+                    // Render ulang halaman profil dengan mengirimkan flag success: true
+                    return res.render('user/profile', {
+                        title: 'Edit Profil Saya',
+                        userProfile: { ...currentUserData, nama_lengkap, username },
+                        error: null,
+                        success: true
+                    });
+                });
+            }
+        } catch (error) {
+            console.error("Error server:", error);
+            res.status(500).send("Terjadi kesalahan pada server.");
+        }
+    });
+};

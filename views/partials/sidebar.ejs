@@ -85,14 +85,39 @@
                 Pengaturan Aplikasi
             </a>
         <% } %>
+    </nav>
 
-        <div class="pt-4 mt-4 border-t border-emerald-700">
-            <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-red-200 hover:bg-red-600 hover:text-white rounded-lg transition-colors">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Keluar
+<!-- ========================================== -->
+<!-- WIDGET USER PROFILE & AKSI DI BAWAH SIDEBAR -->
+<!-- ========================================== -->
+<% if (locals.currentUser) { %>
+    <div class="mt-auto p-4 bg-gray-900 border-t border-gray-800">
+        <!-- Info User -->
+        <div class="flex items-center space-x-3 mb-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow flex-shrink-0">
+                <%= currentUser.nama_lengkap ? currentUser.nama_lengkap.charAt(0).toUpperCase() : 'U' %>
+            </div>
+            <div class="overflow-hidden">
+                <p class="text-sm font-semibold text-white truncate"><%= currentUser.nama_lengkap || currentUser.username %></p>
+                <span class="inline-block px-2 py-0.5 text-[10px] font-medium bg-emerald-900/60 text-emerald-300 rounded border border-emerald-700/50 truncate">
+                    <%= currentUser.role %>
+                </span>
+            </div>
+        </div>
+
+        <!-- Tombol Aksi (Edit Profile & Logout) -->
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-800">
+            <a href="/admin/users/profile" class="flex items-center justify-center px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
+                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Profil
+            </a>
+            <a href="/logout" onclick="openLogoutModal(event)" class="flex items-center justify-center px-3 py-1.5 bg-rose-900/40 hover:bg-rose-900 text-rose-300 hover:text-white rounded-lg text-xs font-medium transition-colors border border-rose-800/50">
+                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Logout
             </a>
         </div>
-    </nav>
+    </div>
+<% } %>
 
     <!-- 5. COPYRIGHT FOOTER -->
     <div class="px-4 py-3 bg-emerald-900/50 border-t border-emerald-700/60 text-center flex-shrink-0">
@@ -101,7 +126,56 @@
     </div>
 </aside>
 
+<!-- Modal Konfirmasi Logout Kustom -->
+<div id="logoutModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-95 opacity-0" id="modalContainer">
+        <div class="text-center">
+            <!-- Ikon Peringatan -->
+            <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-1">Konfirmasi Keluar</h3>
+            <p class="text-sm text-gray-500 mb-6">Apakah Anda yakin ingin keluar dari sesi sistem MyMosque?</p>
+                
+            <!-- Tombol Aksi Modal -->
+            <div class="flex space-x-3">
+                <button type="button" onclick="closeLogoutModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">
+                    Batal
+                </button>
+                <a href="/logout" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold transition-colors text-center flex items-center justify-center">
+                    Ya, Keluar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    function openLogoutModal(event) {
+        event.preventDefault(); // Mencegah link langsung berpindah halaman
+        const modal = document.getElementById('logoutModal');
+        const container = document.getElementById('modalContainer');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            container.classList.remove('scale-95', 'opacity-0');
+            container.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeLogoutModal() {
+        const modal = document.getElementById('logoutModal');
+        const container = document.getElementById('modalContainer');
+        
+        container.classList.remove('scale-100', 'opacity-100');
+        container.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+    
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('-translate-x-full');
         document.getElementById('sidebar-overlay').classList.toggle('hidden');

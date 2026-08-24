@@ -10,9 +10,15 @@
         </div>
         
         <div class="relative z-10">
-            <h2 class="text-3xl font-extrabold mb-2">Ahlan wa Sahlan, Admin! 👋</h2>
-            <p class="text-emerald-100 text-lg">Selamat datang di Panel Kontrol <span class="font-bold">MyMosque App</span>.</p>
-            <p class="text-emerald-200 text-sm mt-1">Anda saat ini mengelola data untuk: <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Masjid' %></p>
+            <!-- Menyapa berdasarkan nama lengkap atau username user yang login -->
+            <h2 class="text-3xl font-extrabold mb-2">
+                Ahlan wa Sahlan, <%= (typeof currentUser !== 'undefined' && currentUser && (currentUser.nama_lengkap || currentUser.username)) ? (currentUser.nama_lengkap || currentUser.username) : 'Admin' %>! 👋
+            </h2>
+            <p class="text-emerald-100 text-lg">Selamat datang kembali di Panel Kontrol <span class="font-bold">MyMosque App</span>.</p>
+            <p class="text-emerald-200 text-sm mt-1">
+                Anda login sebagai <span class="font-semibold underline"><%= (typeof currentUser !== 'undefined' && currentUser && currentUser.role) ? currentUser.role : 'Administrator' %></span> dan mengelola data untuk: 
+                <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Masjid' %>
+            </p>
         </div>
     </div>
 

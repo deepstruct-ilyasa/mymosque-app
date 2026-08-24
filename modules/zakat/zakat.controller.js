@@ -258,7 +258,7 @@ exports.storeTransaksi = (req, res) => {
                 return res.status(500).send("Gagal menyimpan transaksi: " + err.message);
             }
             // UPDATE: Redirect ke area admin
-            res.redirect('/admin/zakat/input');
+            res.redirect('/admin/zakat/input?success=1');
         });
     });
 };

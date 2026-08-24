@@ -1,8 +1,9 @@
 const usersDb = require('../../config/users_db');
 const ALL_MODULES = require('../../config/modules.config');
 
+// 1. Middleware untuk menyuntikkan data user aktif ke res.locals.currentUser
 const attachUser = (req, res, next) => {
-    if (!req.session || !req.session.userId) {
+    if (!req.session.userId) {
         res.locals.currentUser = null;
         return next();
     }
@@ -14,7 +15,7 @@ const attachUser = (req, res, next) => {
             } catch (e) {
                 user.permissions = [];
             }
-            res.locals.currentUser = user;
+            res.locals.currentUser = user; // <-- Diubah menjadi currentUser agar cocok dengan sidebar.ejs
         } else {
             res.locals.currentUser = null;
         }
@@ -22,6 +23,7 @@ const attachUser = (req, res, next) => {
     });
 };
 
+// 2. Middleware penjaga halaman berdasarkan izin modul (RBAC)
 const checkPermission = (requiredModule) => {
     return (req, res, next) => {
         if (!req.session || !req.session.userId) {
