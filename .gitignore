@@ -9,6 +9,8 @@ public/uploads/zakat/*
 public/uploads/users/*
 !public/uploads/users/.gitkeep
 
+public/uploads/*
+!public/uploads/.gitkeep
 .env
 *.log
 .DS_Store
