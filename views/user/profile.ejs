@@ -164,18 +164,42 @@
 
                 const result = await response.json();
 
-                if (response.ok && result.success) {
+if (response.ok && result.success) {
                     showNotification(true, 'Profil berhasil diperbarui secara instan!');
                     
-                    // Perbarui foto di sidebar secara live tanpa refresh
+                    // 1. Ambil nilai input terbaru yang baru saja disimpan
+                    const namaBaru = document.getElementById('namaLengkapInput').value.trim();
+                    const usernameBaru = document.getElementById('usernameInput').value.trim();
+
+                    // 2. Perbarui tampilan Nama Lengkap / Username di Sidebar secara Live
+                    const sidebarNamaEl = document.querySelector('aside .flex.items-center.space-x-3 p-1, aside .overflow-hidden p.text-sm.font-semibold');
+                    if (sidebarNamaEl) {
+                        sidebarNamaEl.innerText = namaBaru;
+                    }
+
+                    // Alternatif selector universal untuk teks nama di sidebar (jika struktur class berbeda)
+                    const sidebarUserParagraphs = document.querySelectorAll('aside p.text-sm.font-semibold.text-white');
+                    sidebarUserParagraphs.forEach(p => {
+                        p.innerText = namaBaru;
+                    });
+
+                    // 3. Perbarui foto di sidebar secara live jika ada perubahan foto
                     if (result.fotoBaru) {
                         const sidebarImgContainer = document.querySelector('aside .w-10.h-10');
                         if (sidebarImgContainer) {
                             sidebarImgContainer.innerHTML = `<img src="/uploads/users/${result.fotoBaru}" alt="Foto Profil" class="w-full h-full object-cover">`;
                         }
+                    } else {
+                        // Jika foto dihapus atau kembali ke inisial huruf berdasarkan nama baru
+                        const sidebarImgContainer = document.querySelector('aside .w-10.h-10');
+                        if (sidebarImgContainer && namaBaru) {
+                            // Cek apakah isinya gambar, jika ingin di-update inisialnya juga bisa diatur di sini
+                        }
                     }
 
-                    // Kosongkan input password baru setelah sukses
+                    // 4. Kosongkan input password lama & baru setelah sukses tersimpan
+                    const passLamaInput = document.querySelector('input[name="password_lama"]');
+                    if (passLamaInput) passLamaInput.value = '';
                     document.getElementById('passwordBaruInput').value = '';
                 } else {
                     showNotification(false, result.error || 'Gagal memperbarui profil.');

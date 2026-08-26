@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const userController = require('./user.controller');
+const { checkPermission } = require('./auth.middleware');
 
 // Konfigurasi Multer untuk Foto Profil User
 const userStorage = multer.diskStorage({
@@ -17,21 +18,26 @@ const userStorage = multer.diskStorage({
     filename: (req, file, cb) => {
         const timestamp = Date.now();
         const ext = path.extname(file.originalname);
-        // Format seragam: logo-[timestamp]-user.png/jpg
         cb(null, `logo-${timestamp}-user${ext}`);
     }
 });
 const uploadUser = multer({ storage: userStorage });
 
-router.get('/', userController.daftarUser);
-router.get('/tambah', userController.formTambahUser);
-router.post('/tambah', userController.storeUser); // Tambah user BARU TANPA UPLOAD FOTO
-router.get('/edit/:id', userController.formEditUser);
-router.post('/edit/:id', userController.updateUser);
-router.post('/hapus/:id', userController.hapusUser);
-router.post('/reset-password/:id', userController.adminResetPassword);
-
+// ==========================================
+// RUTE PROFIL MANDIRI (Bisa diakses SEMUA user yang login / Tanpa checkPermission)
+// ==========================================
 router.get('/profile', userController.formEditProfile);
-router.post('/profile', uploadUser.single('foto'), userController.updateProfile); // Update profil + ganti foto
+router.post('/profile', uploadUser.single('foto'), userController.updateProfile);
+
+// ==========================================
+// RUTE MANAJEMEN PENGGUNA (DIAMANKAN SATU-SATU DENGAN checkPermission('users'))
+// ==========================================
+router.get('/', checkPermission('users'), userController.daftarUser);
+router.get('/tambah', checkPermission('users'), userController.formTambahUser);
+router.post('/tambah', checkPermission('users'), userController.storeUser);
+router.get('/edit/:id', checkPermission('users'), userController.formEditUser);
+router.post('/edit/:id', checkPermission('users'), userController.updateUser);
+router.post('/hapus/:id', checkPermission('users'), userController.hapusUser);
+router.post('/reset-password/:id', checkPermission('users'), userController.adminResetPassword);
 
 module.exports = router;

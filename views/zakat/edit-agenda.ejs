@@ -47,19 +47,20 @@
                         <div>
                             <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Ganti Logo (Opsional)</label>
                             
-                            <!-- PREVIEW LOGO LAMA -->
+                            <!-- KONTAINER PREVIEW LOGO (Lama / Baru) -->
                             <div class="flex items-center gap-3 mb-2">
-                                <% if(event.logo) { %>
-                                    <div class="w-12 h-12 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <div id="logoPreviewContainer" class="w-12 h-12 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    <% if(event.logo) { %>
                                         <img src="/uploads/zakat/<%= event.logo %>" alt="Logo" class="w-full h-full object-contain">
-                                    </div>
-                                    <span class="text-[11px] text-gray-500">Logo aktif saat ini. Pilih file baru di bawah jika ingin menggantinya.</span>
-                                <% } else { %>
-                                    <div class="text-[11px] text-gray-400 italic">Belum ada logo yang di-upload.</div>
-                                <% } %>
+                                    <% } else { %>
+                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <% } %>
+                                </div>
+                                <span class="text-[11px] text-gray-500">Logo aktif saat ini. Pilih file baru di bawah jika ingin menggantinya secara instan.</span>
                             </div>
 
-                            <input type="file" name="logo" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-gray-50">
+                            <!-- TAMBAHKAN id="logoInput" -->
+                            <input type="file" id="logoInput" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-gray-50 cursor-pointer">
                         </div>
                     </div>
                     <div>
@@ -260,6 +261,27 @@
         setTimeout(() => {
             modal.classList.add('hidden');
         }, 200);
+    }
+
+    // ==========================================================
+    // LIVE PREVIEW LOGO AGENDA ZAKAT
+    // ==========================================================
+    const logoInput = document.getElementById('logoInput');
+    if (logoInput) {
+        logoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const previewContainer = document.getElementById('logoPreviewContainer');
+                    // Ganti isi kotak preview dengan gambar baru yang dipilih secara instan
+                    if (previewContainer) {
+                        previewContainer.innerHTML = `<img src="${event.target.result}" alt="Pratinjau Logo Baru" class="w-full h-full object-contain">`;
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
     }
 
     // VALIDASI FORM EDIT AGENDA

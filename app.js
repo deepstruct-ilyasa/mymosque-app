@@ -103,7 +103,7 @@ app.get('/admin/dashboard', requireAuth, checkPermission('dashboard'), (req, res
 
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);
 app.use('/admin/settings', requireAuth, checkPermission('settings'), settingsRoutes);
-app.use('/admin/users', requireAuth, checkPermission('users'), userRoutes);
+app.use('/admin/users', requireAuth, userRoutes);
 
 // Menjalankan Server di 0.0.0.0
 app.listen(port, '0.0.0.0', () => {
