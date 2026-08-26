@@ -1,6 +1,8 @@
 const usersDb = require('../../config/users_db');
 const modulesConfig = require('../../config/modules.config');
-const bcrypt = require('bcrypt'); // <-- Import bcrypt
+const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 const saltRounds = 10;
 
 // 1. Tampilkan Daftar Pengguna
@@ -25,21 +27,20 @@ exports.formTambahUser = (req, res) => {
     });
 };
 
-// 3. Proses Simpan Pengguna Baru (DI-HASH)
+// 3. Proses Simpan Pengguna Baru (DI-HASH, TANPA FOTO)
 exports.storeUser = (req, res) => {
     const { username, password, nama_lengkap, role, permissions } = req.body;
     
     const permsArray = Array.isArray(permissions) ? permissions : (permissions ? [permissions] : []);
     const permsJson = JSON.stringify(permsArray);
 
-    // Hash password sebelum disimpan
     bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
         if (err) {
             console.error("Gagal enkripsi password:", err);
             return res.status(500).send("Gagal memproses password.");
         }
 
-        const sql = `INSERT INTO users (username, password, nama_lengkap, role, permissions) VALUES (?, ?, ?, ?, ?)`;
+        const sql = `INSERT INTO users (username, password, nama_lengkap, role, permissions, foto) VALUES (?, ?, ?, ?, ?, NULL)`;
         usersDb.run(sql, [username, hashedPassword, nama_lengkap, role || 'Admin', permsJson], (err) => {
             if (err) return res.status(500).send("Gagal menyimpan pengguna (Username mungkin sudah terdaftar).");
             res.redirect('/admin/users');
@@ -65,7 +66,7 @@ exports.formEditUser = (req, res) => {
     });
 };
 
-// 5. Proses Update Pengguna (DI-HASH JIKA PASSWORD DIISI)
+// 5. Proses Update Pengguna
 exports.updateUser = (req, res) => {
     const { id } = req.params;
     const { username, password, nama_lengkap, role, permissions } = req.body;
@@ -74,7 +75,6 @@ exports.updateUser = (req, res) => {
     const permsJson = JSON.stringify(permsArray);
 
     if (password && password.trim() !== "") {
-        // Jika password diisi, hash password baru
         bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
             if (err) return res.status(500).send("Gagal enkripsi password baru.");
 
@@ -84,7 +84,6 @@ exports.updateUser = (req, res) => {
             });
         });
     } else {
-        // Jika password kosong, jangan ubah password lama
         const sql = `UPDATE users SET username = ?, nama_lengkap = ?, role = ?, permissions = ? WHERE id = ?`;
         usersDb.run(sql, [username, nama_lengkap, role, permsJson, id], (err) => {
             res.redirect('/admin/users');
@@ -95,18 +94,21 @@ exports.updateUser = (req, res) => {
 // 6. Proses Hapus Pengguna
 exports.hapusUser = (req, res) => {
     const { id } = req.params;
-    usersDb.run("DELETE FROM users WHERE id = ?", [id], (err) => {
-        if (err) {
-            console.error("Gagal menghapus user:", err.message);
+    usersDb.get("SELECT foto FROM users WHERE id = ?", [id], (err, user) => {
+        if (user && user.foto) {
+            const fotoPath = path.join(__dirname, '../../public/uploads/users/', user.foto);
+            if (fs.existsSync(fotoPath)) fs.unlinkSync(fotoPath);
         }
-        res.redirect('/admin/users');
+        usersDb.run("DELETE FROM users WHERE id = ?", [id], (err) => {
+            res.redirect('/admin/users');
+        });
     });
 };
 
 // 1. Tampilkan Form Edit Profil Pengguna yang Sedang Login
 exports.formEditProfile = (req, res) => {
     const userId = req.session.userId;
-    const isSuccess = req.query.success ? true : false; // Ambil status sukses dari query URL
+    const isSuccess = req.query.success ? true : false;
 
     usersDb.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
         if (err || !user) {
@@ -116,68 +118,101 @@ exports.formEditProfile = (req, res) => {
             title: 'Edit Profil Saya',
             userProfile: user,
             error: null,
-            success: isSuccess // Lempar ke view
+            success: isSuccess
         });
     });
 };
 
-// 2. Proses Simpan Pembaruan Profil & Password
+// 1. Proses Simpan Pembaruan Profil (Wajib Masukkan Password Lama jika ganti password)
 exports.updateProfile = async (req, res) => {
     const userId = req.session.userId;
-    const { nama_lengkap, username, password_baru } = req.body;
+    const { nama_lengkap, username, password_lama, password_baru } = req.body;
+    const fotoBaru = req.file ? req.file.filename : null;
 
-    // Ambil data user saat ini untuk persiapan jika terjadi error (agar form tidak kosong)
     usersDb.get("SELECT * FROM users WHERE id = ?", [userId], async (err, currentUserData) => {
         if (err || !currentUserData) {
-            return res.status(404).send("Data pengguna tidak ditemukan.");
+            return res.status(404).json({ success: false, error: "Data pengguna tidak ditemukan." });
+        }
+
+        let fotoFinal = currentUserData.foto;
+
+        if (fotoBaru) {
+            if (currentUserData.foto) {
+                const oldPath = path.join(__dirname, '../../public/uploads/users/', currentUserData.foto);
+                if (fs.existsSync(oldPath)) {
+                    fs.unlink(oldPath, (err) => {
+                        if (err) console.error("Gagal menghapus foto profil lama:", err);
+                    });
+                }
+            }
+            fotoFinal = fotoBaru;
         }
 
         try {
+            // Jika user mengisi kolom password baru, maka password lama wajib diisi & divalidasi
             if (password_baru && password_baru.trim() !== "") {
-                const saltRounds = 10;
+                if (!password_lama || password_lama.trim() === "") {
+                    return res.json({ success: false, error: 'Password lama wajib diisi untuk melakukan perubahan kata sandi!' });
+                }
+
+                // Cek kesesuaian password lama dengan database menggunakan bcrypt
+                const isMatch = await bcrypt.compare(password_lama, currentUserData.password);
+                if (!isMatch) {
+                    return res.json({ success: false, error: 'Password lama yang Anda masukkan salah!' });
+                }
+
                 const hashedPassword = await bcrypt.hash(password_baru, saltRounds);
 
-                const sql = `UPDATE users SET nama_lengkap = ?, username = ?, password = ? WHERE id = ?`;
-                usersDb.run(sql, [nama_lengkap, username, hashedPassword, userId], (err) => {
+                const sql = `UPDATE users SET nama_lengkap = ?, username = ?, password = ?, foto = ? WHERE id = ?`;
+                usersDb.run(sql, [nama_lengkap, username, hashedPassword, fotoFinal, userId], (err) => {
                     if (err) {
-                        return res.render('user/profile', {
-                            title: 'Edit Profil Saya',
-                            userProfile: currentUserData,
-                            error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).',
-                            success: false
-                        });
+                        return res.json({ success: false, error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).' });
                     }
-                    // Render ulang halaman profil dengan mengirimkan flag success: true
-                    return res.render('user/profile', {
-                        title: 'Edit Profil Saya',
-                        userProfile: { ...currentUserData, nama_lengkap, username },
-                        error: null,
-                        success: true
-                    });
+                    return res.json({ success: true, fotoBaru: fotoFinal });
                 });
             } else {
-                const sql = `UPDATE users SET nama_lengkap = ?, username = ? WHERE id = ?`;
-                usersDb.run(sql, [nama_lengkap, username, userId], (err) => {
+                // Jika tidak ingin mengganti password, langsung update data teks & foto
+                const sql = `UPDATE users SET nama_lengkap = ?, username = ?, foto = ? WHERE id = ?`;
+                usersDb.run(sql, [nama_lengkap, username, fotoFinal, userId], (err) => {
                     if (err) {
-                        return res.render('user/profile', {
-                            title: 'Edit Profil Saya',
-                            userProfile: currentUserData,
-                            error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).',
-                            success: false
-                        });
+                        return res.json({ success: false, error: 'Gagal memperbarui profil (Username mungkin sudah digunakan).' });
                     }
-                    // Render ulang halaman profil dengan mengirimkan flag success: true
-                    return res.render('user/profile', {
-                        title: 'Edit Profil Saya',
-                        userProfile: { ...currentUserData, nama_lengkap, username },
-                        error: null,
-                        success: true
-                    });
+                    return res.json({ success: true, fotoBaru: fotoFinal });
                 });
             }
         } catch (error) {
             console.error("Error server:", error);
-            res.status(500).send("Terjadi kesalahan pada server.");
+            return res.status(500).json({ success: false, error: "Terjadi kesalahan pada server." });
         }
     });
+};
+
+// 2. Fungsi Reset Password oleh Admin (Dilindungi agar tidak bisa reset diri sendiri)
+exports.adminResetPassword = async (req, res) => {
+    const adminId = req.session.userId;
+    const targetUserId = req.params.id;
+    const { password_baru } = req.body;
+
+    // CEGAH ADMIN MERESET AKUNNYA SENDIRI
+    if (String(adminId) === String(targetUserId)) {
+        return res.status(403).send("Anda tidak diizinkan mereset password akun Anda sendiri melalui menu ini.");
+    }
+
+    if (!password_baru || password_baru.trim() === "") {
+        return res.status(400).send("Password baru tidak boleh kosong.");
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password_baru, saltRounds);
+        usersDb.run("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, targetUserId], (err) => {
+            if (err) {
+                console.error("Gagal reset password user:", err.message);
+                return res.status(500).send("Gagal mereset password ke database.");
+            }
+            res.redirect('/admin/users?success_reset=1');
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send("Server error saat hashing password.");
+    }
 };

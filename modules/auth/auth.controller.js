@@ -1,4 +1,5 @@
 const usersDb = require('../../config/users_db');
+const settingsDb = require('../../config/settings_db');
 const bcrypt = require('bcrypt');
 
 exports.getLogin = (req, res) => {

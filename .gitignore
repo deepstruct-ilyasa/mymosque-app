@@ -1,6 +1,14 @@
 node_modules/
 database/*.db
-public/*
+
+# Uploads Zakat (Abaikan isinya, kecuali .gitkeep)
+public/uploads/zakat/*
+!public/uploads/zakat/.gitkeep
+
+# Uploads Users (Abaikan isinya, kecuali .gitkeep)
+public/uploads/users/*
+!public/uploads/users/.gitkeep
+
 .env
 *.log
 .DS_Store

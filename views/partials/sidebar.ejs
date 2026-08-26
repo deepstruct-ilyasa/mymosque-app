@@ -16,29 +16,44 @@
     }
 </style>
 
-<aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-emerald-800 text-white transition duration-300 transform -translate-x-full md:relative md:translate-x-0 flex flex-col shadow-xl">
-    
-    <!-- 1. BRAND / NAMA APLIKASI -->
-    <div class="flex items-center justify-center h-14 bg-emerald-900 border-b border-emerald-700 px-4 flex-shrink-0">
-        <h1 class="text-base font-bold truncate">🕌 MyMosque App</h1>
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-full md:w-72 bg-emerald-800 text-white transition duration-300 transform -translate-x-full md:relative md:translate-x-0 flex flex-col shadow-xl">
+    <!-- TOMBOL CLOSE (X) KHUSUS TAMPILAN MOBILE -->
+    <button type="button" onclick="toggleSidebar()" class="absolute top-4 right-4 z-10 p-2 text-emerald-200 hover:text-white bg-emerald-900/50 hover:bg-emerald-700 rounded-full md:hidden transition-colors focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+    </button>
+    <div class="px-4 py-4 bg-emerald-950/40 border-b border-emerald-700/50 flex-shrink-0 text-center flex flex-col items-center justify-center">
+        <!-- Kotak Logo Utama -->
+        <div class="w-32 h-32 flex items-center justify-center overflow-hidden mb-1 shadow-inner flex-shrink-0 p-1">
+            <% if (typeof appSettings !== 'undefined' && appSettings.logo) { %>
+                <!-- Menampilkan master logo dari Pengaturan Aplikasi -->
+                <img src="/uploads/<%= appSettings.logo %>" alt="Logo Masjid" class="w-full h-full object-contain">
+            <% } else { %>
+                <!-- Icon Default jika belum ada logo yang diatur -->
+                <svg class="w-6 h-6 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            <% } %>
+        </div>
+
+        <!-- Nama Masjid & Running Text Alamat -->
+        <div class="w-full overflow-hidden relative marquee-container">
+            <p class="text-xl font-extrabold text-white uppercase tracking-wider truncate px-1">
+                <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Nama Masjid' %>
+            </p>
+            <div class="w-full overflow-hidden whitespace-nowrap">
+                <div class="animate-marquee text-[12px] text-emerald-200">
+                    📍 <%= typeof appSettings !== 'undefined' && appSettings.mosque_address ? appSettings.mosque_address : 'Alamat Masjid' %>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 2. WIDGET WAKTU REAL-TIME -->
+    <!-- 3. WIDGET WAKTU REAL-TIME -->
     <div class="bg-emerald-900/60 border-b border-emerald-700 px-4 py-3 text-center flex-shrink-0 font-sans">
         <div id="realtime-clock" class="text-lg font-extrabold tracking-wider text-emerald-100">00:00:00</div>
         <div id="realtime-date" class="text-[11px] text-emerald-300 uppercase tracking-wide mt-0.5">Memuat waktu...</div>
-    </div>
-
-    <!-- 3. NAMA MASJID & ALAMAT -->
-    <div class="px-3 py-2.5 bg-emerald-950/40 border-b border-emerald-700/50 flex-shrink-0 text-center overflow-hidden relative marquee-container">
-        <p class="text-xs font-bold text-white uppercase truncate">
-            <%= typeof appSettings !== 'undefined' && appSettings.mosque_name ? appSettings.mosque_name : 'Nama Masjid' %>
-        </p>
-        <div class="w-full overflow-hidden whitespace-nowrap mt-0.5">
-            <div class="animate-marquee text-[11px] text-emerald-200">
-                📍 <%= typeof appSettings !== 'undefined' && appSettings.mosque_address ? appSettings.mosque_address : 'Alamat Masjid' %>
-            </div>
-        </div>
     </div>
     
     <!-- 4. MENU-MENU NAVIGASI (DIAMANKAN DENGAN PERMISSION) -->
@@ -94,9 +109,17 @@
     <div class="mt-auto p-4 bg-gray-900 border-t border-gray-800">
         <!-- Info User -->
         <div class="flex items-center space-x-3 mb-3">
-            <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow flex-shrink-0">
-                <%= currentUser.nama_lengkap ? currentUser.nama_lengkap.charAt(0).toUpperCase() : 'U' %>
+            <!-- Avatar / Foto Profil Cerdas -->
+            <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow flex-shrink-0 overflow-hidden border border-emerald-500/30">
+                <% if (typeof currentUser.foto !== 'undefined' && currentUser.foto) { %>
+                    <!-- Jika ada file foto profil di database -->
+                    <img src="/uploads/users/<%= currentUser.foto %>" alt="Foto Profil" class="w-full h-full object-cover">
+                <% } else { %>
+                    <!-- Fallback Inisial Huruf jika belum ada foto -->
+                    <%= currentUser.nama_lengkap ? currentUser.nama_lengkap.charAt(0).toUpperCase() : 'U' %>
+                <% } %>
             </div>
+            
             <div class="overflow-hidden">
                 <p class="text-sm font-semibold text-white truncate"><%= currentUser.nama_lengkap || currentUser.username %></p>
                 <span class="inline-block px-2 py-0.5 text-[10px] font-medium bg-emerald-900/60 text-emerald-300 rounded border border-emerald-700/50 truncate">
@@ -120,7 +143,7 @@
 <% } %>
 
     <!-- 5. COPYRIGHT FOOTER -->
-    <div class="px-4 py-3 bg-emerald-900/50 border-t border-emerald-700/60 text-center flex-shrink-0">
+    <div class="px-3 py-3 bg-emerald-900/50 border-t border-emerald-700/60 text-center flex-shrink-0">
         <p class="text-[11px] text-emerald-200 font-medium">&copy; 2026 MyMosque App</p>
         <p class="text-[10px] text-emerald-400 mt-0.5">All Rights Reserved</p>
     </div>

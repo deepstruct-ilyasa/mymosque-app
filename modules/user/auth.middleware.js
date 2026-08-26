@@ -8,14 +8,15 @@ const attachUser = (req, res, next) => {
         return next();
     }
 
-    usersDb.get("SELECT id, username, nama_lengkap, role, permissions FROM users WHERE id = ?", [req.session.userId], (err, user) => {
+    // TAMBAHKAN , foto PADA KUERI SELECT DI BAWAH INI
+    usersDb.get("SELECT id, username, nama_lengkap, role, permissions, foto FROM users WHERE id = ?", [req.session.userId], (err, user) => {
         if (user) {
             try {
                 user.permissions = JSON.parse(user.permissions || '[]');
             } catch (e) {
                 user.permissions = [];
             }
-            res.locals.currentUser = user; // <-- Diubah menjadi currentUser agar cocok dengan sidebar.ejs
+            res.locals.currentUser = user; // <-- currentUser agar cocok dengan sidebar.ejs
         } else {
             res.locals.currentUser = null;
         }

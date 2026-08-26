@@ -12,10 +12,10 @@ if (!fs.existsSync(dbDir)) {
     console.log('📁 Folder database berhasil dibuat secara otomatis.');
 }
 
-const publicDir = path.join(__dirname, 'public/uploads/zakat');
-if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true });
-    console.log('📁 Folder public/uploads/zakat berhasil dibuat secara otomatis.');
+const uploadsDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('📁 Folder public/uploads berhasil dibuat secara otomatis.');
 }
 
 // Setelah folder dipastikan ada, aman untuk memuat file koneksi database

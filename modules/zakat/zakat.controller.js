@@ -1,4 +1,5 @@
 const zakatDb = require('../../config/zakat_db');
+const settingsDb = require('../../config/settings_db');
 const fs = require('fs');
 const path = require('path');
 
@@ -98,7 +99,22 @@ exports.apiRekapData = (req, res) => {
 exports.inputForm = (req, res) => {
     zakatDb.get("SELECT * FROM event WHERE status = 'Aktif' ORDER BY id DESC LIMIT 1", [], (err, eventAktif) => {
         if (!eventAktif) {
-            return res.render('zakat/wizard-event', { title: 'Setup Periode Zakat' });
+            // Ambil data default dari Pengaturan Aplikasi untuk nilai awal Wizard
+            settingsDb.all("SELECT * FROM app_settings", [], (err, rows) => {
+                const settings = {};
+                if (rows) rows.forEach(r => settings[r.key] = r.value);
+
+                const defaultNama = settings.mosque_name || 'Masjid';
+                const defaultAlamat = settings.mosque_address || '';
+                const defaultLogo = settings.logo || ''; // Ambil master logo aplikasi
+
+                return res.render('zakat/wizard-event', { 
+                    title: 'Setup Periode Zakat',
+                    defaultNama,
+                    defaultAlamat,
+                    defaultLogo
+                });
+            });
         } else {
             return res.render('zakat/input', { title: 'Input Penerimaan Zakat', event: eventAktif });
         }
@@ -115,10 +131,35 @@ exports.storeWizardEvent = (req, res) => {
         nama_lembaga, sub_lembaga, telepon, alamat, 
         ketua, nama_ketua, sub_ketua, nama_sub_ketua,
         standar_fitrah_beras, standar_fitrah_uang, 
-        standar_fidyah_beras, standar_fidyah_uang, nisab_zakat_mal 
+        standar_fidyah_beras, standar_fidyah_uang, nisab_zakat_mal,
+        default_logo // Menerima hidden input master logo dari settings
     } = req.body;
     
-    const logo = req.file ? req.file.filename : null;
+    let finalLogo = null;
+
+    if (req.file) {
+        // KASUS 1: Admin meng-upload logo baru (sudah otomatis bernama logo-[timestamp]-zakat.ext oleh multer)
+        finalLogo = req.file.filename;
+    } else if (default_logo) {
+        // KASUS 2: Admin TIDAK mengubah logo (memakai default dari Setting Aplikasi)
+        // Kita salin file master dari /public/uploads/ ke /public/uploads/zakat/ dengan format nama yang disamakan
+        const sourcePath = path.join(__dirname, '../../public/uploads/', default_logo);
+        const targetDir = path.join(__dirname, '../../public/uploads/zakat/');
+        
+        if (fs.existsSync(sourcePath)) {
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+            }
+            const timestamp = Date.now();
+            const ext = path.extname(default_logo);
+            const copiedFileName = `logo-${timestamp}-zakat${ext}`;
+            const targetPath = path.join(targetDir, copiedFileName);
+            
+            fs.copyFileSync(sourcePath, targetPath);
+            finalLogo = copiedFileName; // Tersimpan dengan format logo-[timestamp]-zakat.ext
+        }
+    }
+
     const status = 'Aktif';
 
     zakatDb.run("UPDATE event SET status = 'Selesai'", [], (err) => {
@@ -133,7 +174,7 @@ exports.storeWizardEvent = (req, res) => {
             sub_lembaga || '', 
             telepon || '', 
             alamat || '', 
-            logo,
+            finalLogo,
             ketua || 'Ketua Panitia', 
             nama_ketua || '', 
             sub_ketua || 'Bendahara', 
@@ -149,7 +190,6 @@ exports.storeWizardEvent = (req, res) => {
                 console.error("Gagal simpan event:", err.message);
                 return res.status(500).send("Gagal menyimpan event ke database.");
             }
-            // UPDATE: Redirect ke area admin
             res.redirect('/admin/zakat/input');
         });
     });
