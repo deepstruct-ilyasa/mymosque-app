@@ -130,7 +130,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-emerald-900 mb-1">Uang (Rp per Jiwa)</label>
-                        <input type="number" name="standar_fitrah_uang" value="40000" placeholder="Contoh: 40000" required class="w-full border border-emerald-300 rounded-lg p-2.5 bg-white font-bold text-emerald-800">
+                        <input type="text" id="input_fitrah_uang" value="<%= typeof event !== 'undefined' ? event.standar_fitrah_uang : '40000' %>" placeholder="Contoh: 40.000" required class="w-full border border-emerald-300 rounded-lg p-2.5 bg-white font-bold text-emerald-800 outline-none">
+                        <input type="hidden" name="standar_fitrah_uang" id="hidden_fitrah_uang" value="<%= typeof event !== 'undefined' ? event.standar_fitrah_uang : '40000' %>">
                     </div>
                 </div>
             </div>
@@ -145,7 +146,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-purple-900 mb-1">Uang (Rp per Hari)</label>
-                        <input type="number" name="standar_fidyah_uang" value="30000" placeholder="Contoh: 30000" required class="w-full border border-purple-300 rounded-lg p-2.5 bg-white font-bold text-purple-800">
+                        <input type="text" id="input_fidyah_uang" value="<%= typeof event !== 'undefined' ? event.standar_fidyah_uang : '30000' %>" placeholder="Contoh: 30.000" required class="w-full border border-purple-300 rounded-lg p-2.5 bg-white font-bold text-purple-800 outline-none">
+                        <input type="hidden" name="standar_fidyah_uang" id="hidden_fidyah_uang" value="<%= typeof event !== 'undefined' ? event.standar_fidyah_uang : '30000' %>">
                     </div>
                 </div>
             </div>
@@ -155,7 +157,8 @@
                 <h3 class="font-bold text-blue-900 text-sm uppercase mb-2">Zakat Mal</h3>
                 <div>
                     <label class="block text-xs font-bold text-blue-800">Nisab Zakat Mal (Rp)</label>
-                    <input type="number" name="nisab_zakat_mal" value="85000000" required class="w-full border border-blue-300 rounded-lg p-2.5 bg-white font-bold text-blue-800">
+                    <input type="text" id="input_nisab_mal" value="<%= typeof event !== 'undefined' ? event.nisab_zakat_mal : '85000000' %>" required class="w-full border border-blue-300 rounded-lg p-2.5 bg-white font-bold text-blue-800 outline-none">
+                    <input type="hidden" name="nisab_zakat_mal" id="hidden_nisab_mal" value="<%= typeof event !== 'undefined' ? event.nisab_zakat_mal : '85000000' %>">
                     <p class="text-[10px] text-blue-600 mt-1">Nilai harta minimal untuk wajib zakat mal (Standar 85 gram emas).</p>
                 </div>
             </div>

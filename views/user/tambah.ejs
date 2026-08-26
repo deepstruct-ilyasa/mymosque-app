@@ -28,7 +28,7 @@
                 <select name="role" class="w-full border border-gray-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white font-semibold text-emerald-800">
                     <option value="Super Admin">Super Admin</option>
                     <option value="Admin">Admin</option>
-                    <option value="Petugas">Petugas Input</option>
+                    <option value="Petugas" selected>Petugas Input</option>
                 </select>
             </div>
 
@@ -36,9 +36,15 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Hak Akses Modul:</label>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <% allModules.forEach(mod => { %>
+                        <% 
+                            // Logika: Jika ini form edit dan rolenya Super Admin, atau kondisi default, centang semua.
+                            // Variabel user.role bisa disesuaikan dengan objek data user yang sedang diedit (misal: user.role === 'Super Admin')
+                            const isSuperAdmin = (typeof user !== 'undefined' && user.role === 'Super Admin');
+                            const isDefaultChecked = (mod.key === 'dashboard' || isSuperAdmin);
+                        %>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="permissions" value="<%= mod.key %>" 
-                                <%= (mod.key === 'dashboard') ? 'checked' : '' %> 
+                                <%= isDefaultChecked ? 'checked' : '' %> 
                                 class="rounded text-emerald-600 focus:ring-emerald-500">
                             <span><%= mod.label %></span>
                         </label>

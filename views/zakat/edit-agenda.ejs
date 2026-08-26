@@ -262,27 +262,7 @@
             modal.classList.add('hidden');
         }, 200);
     }
-
-    // ==========================================================
-    // LIVE PREVIEW LOGO AGENDA ZAKAT
-    // ==========================================================
-    const logoInput = document.getElementById('logoInput');
-    if (logoInput) {
-        logoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const previewContainer = document.getElementById('logoPreviewContainer');
-                    // Ganti isi kotak preview dengan gambar baru yang dipilih secara instan
-                    if (previewContainer) {
-                        previewContainer.innerHTML = `<img src="${event.target.result}" alt="Pratinjau Logo Baru" class="w-full h-full object-contain">`;
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-    }
+    
 
     // VALIDASI FORM EDIT AGENDA
     document.addEventListener('DOMContentLoaded', function() {

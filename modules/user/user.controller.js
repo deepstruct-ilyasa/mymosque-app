@@ -50,18 +50,24 @@ exports.storeUser = (req, res) => {
 
 // 4. Tampilkan Form Edit Pengguna
 exports.formEditUser = (req, res) => {
-    const { id } = req.params;
-    usersDb.get("SELECT id, username, nama_lengkap, role, permissions FROM users WHERE id = ?", [id], (err, user) => {
-        if (err || !user) return res.status(404).send("Pengguna tidak ditemukan.");
+    const userId = req.params.id;
+    
+    usersDb.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
+        if (err || !user) {
+            return res.redirect('/admin/users');
+        }
+
+        // Parse teks JSON dari database menjadi Array JavaScript
         try {
-            user.permissions = JSON.parse(user.permissions || '[]');
+            user.permissions = user.permissions ? JSON.parse(user.permissions) : [];
         } catch (e) {
             user.permissions = [];
         }
+
         res.render('user/edit', {
-            title: `Edit Pengguna - ${user.nama_lengkap}`,
-            user,
-            allModules: modulesConfig
+            title: 'Edit Pengguna - MyMosque',
+            user: user,
+            allModules: modulesConfig // <-- Menggunakan konfigurasi pusat yang sama secara dinamis!
         });
     });
 };

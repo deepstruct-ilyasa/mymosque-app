@@ -1,0 +1,193 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-xl mx-auto p-4 md:p-6 mt-10 font-sans">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+        
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <span>✏️</span> Edit Transaksi Keuangan
+                </h1>
+                <p class="text-xs text-gray-500 mt-0.5">Perbarui rincian data transaksi masjid.</p>
+            </div>
+            <a href="/admin/finance" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition-colors">
+                Kembali
+            </a>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <!-- TAMBAHKAN enctype="multipart/form-data" DI SINI -->
+        <form action="/admin/finance/edit/<%= transaction.id %>" method="POST" enctype="multipart/form-data" class="space-y-4">
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
+                <input type="date" name="tanggal" value="<%= transaction.tanggal %>" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Jenis Transaksi <span class="text-rose-500">*</span></label>
+                <select name="jenis" id="jenisTransaksi" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white font-semibold text-emerald-800">
+                    <option value="masuk" <%= transaction.jenis === 'masuk' ? 'selected' : '' %>>Kas Masuk (Penerimaan)</option>
+                    <option value="keluar" <%= transaction.jenis === 'keluar' ? 'selected' : '' %>>Kas Keluar (Pengeluaran)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Pilih Kategori <span class="text-rose-500">*</span></label>
+                <select name="kategori_id" id="kategoriDropdown" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat.id %>" data-jenis="<%= cat.jenis %>" <%= transaction.kategori_id === cat.id ? 'selected' : '' %>>
+                            <%= cat.nama_kategori %> (<%= cat.jenis === 'masuk' ? 'Masuk' : 'Keluar' %>)
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah Nominal (Rp) <span class="text-rose-500">*</span></label>
+                <!-- Input teks untuk tampilan format titik ribuan otomatis -->
+                <input type="text" id="inputJumlah" value="<%= transaction.jumlah %>" placeholder="Contoh: 500.000" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-gray-800">
+                
+                <!-- Input tersembunyi untuk mengirim nilai angka murni ke database -->
+                <input type="hidden" name="jumlah" id="hiddenJumlah" value="<%= transaction.jumlah %>">
+            </div>
+
+            <!-- INPUT UPLOAD BUKTI FOTO NOTA -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Upload Bukti Terima / Nota (Opsional)</label>
+                <% if (transaction.lampiran) { %>
+                    <div class="mb-2 flex items-center gap-2">
+                        <a href="/uploads/finance/<%= transaction.lampiran %>" target="_blank" class="text-xs text-blue-600 underline font-medium">Lihat Nota Saat Ini</a>
+                        <span class="text-[10px] text-gray-400">(Pilih file baru di bawah jika ingin menggantinya)</span>
+                    </div>
+                <% } %>
+                <input type="file" name="lampiran" accept="image/*" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-gray-50 cursor-pointer">
+                <p class="text-[10px] text-gray-400 mt-1">Format gambar (JPG, PNG). Nama file disesuaikan otomatis oleh sistem.</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Keterangan / Catatan Tambahan (Opsional)</label>
+                <textarea name="keterangan" rows="3" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"><%= transaction.keterangan %></textarea>
+            </div>
+
+            <div class="pt-4 flex justify-end gap-3">
+                <a href="/admin/finance" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors">
+                    Batal
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- MODAL POPUP NOTIFIKASI SUKSES EDIT -->
+<div id="notificationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-95 opacity-0" id="notifModalContainer">
+        <div class="text-center">
+            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-1">Berhasil!</h3>
+            <p class="text-sm text-gray-500 mb-6">Perubahan data transaksi keuangan berhasil disimpan.</p>
+            <button type="button" onclick="redirectToIndex()" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+                OK, Kembali ke Rekap
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const jenisSelect = document.getElementById('jenisTransaksi');
+        const kategoriSelect = document.getElementById('kategoriDropdown');
+        const options = kategoriSelect.querySelectorAll('option');
+
+        function filterKategori() {
+            const selectedJenis = jenisSelect.value;
+            let hasVisibleSelected = false;
+
+            options.forEach(opt => {
+                const optJenis = opt.getAttribute('data-jenis');
+                if (optJenis === selectedJenis) {
+                    opt.style.display = 'block';
+                    if (opt.selected) hasVisibleSelected = true;
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            if (!hasVisibleSelected) {
+                for (let opt of options) {
+                    if (opt.getAttribute('data-jenis') === selectedJenis) {
+                        opt.selected = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        jenisSelect.addEventListener('change', filterKategori);
+        filterKategori();
+
+        const inputJumlah = document.getElementById('inputJumlah');
+        const hiddenJumlah = document.getElementById('hiddenJumlah');
+
+        function formatRupiah(angka) {
+            let numberString = angka.replace(/[^,\d]/g, '').toString();
+            let split = numberString.split(',');
+            let sisa = split[0].length % 3;
+            let rupiah = split[0].substr(0, sisa);
+            let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+
+            rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+            return rupiah;
+        }
+
+        if (inputJumlah && inputJumlah.value) {
+            hiddenJumlah.value = inputJumlah.value;
+            inputJumlah.value = formatRupiah(inputJumlah.value);
+        }
+
+        if (inputJumlah) {
+            inputJumlah.addEventListener('keyup', function(e) {
+                let nilaiAsli = this.value.replace(/\./g, '');
+                hiddenJumlah.value = nilaiAsli;
+                this.value = formatRupiah(this.value);
+            });
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === '1') {
+            showNotificationModal();
+        }
+    });
+
+    function showNotificationModal() {
+        const modal = document.getElementById('notificationModal');
+        const container = document.getElementById('notifModalContainer');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            container.classList.remove('scale-95', 'opacity-0');
+            container.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function redirectToIndex() {
+        window.location.href = '/admin/finance';
+    }
+</script>
+
+<%- include('../partials/footer') %>

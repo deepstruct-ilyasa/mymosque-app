@@ -18,8 +18,10 @@ if (!fs.existsSync(uploadsDir)) {
     console.log('📁 Folder public/uploads berhasil dibuat secara otomatis.');
 }
 
+
 // Setelah folder dipastikan ada, aman untuk memuat file koneksi database
 require('./config/zakat_db');
+require('./config/finance_db');
 const settingsDb = require('./config/settings_db');
 
 const app = express();
@@ -78,6 +80,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const zakatRoutes = require('./modules/zakat/zakat.routes');
 const settingsRoutes = require('./modules/settings/settings.routes');
 const userRoutes = require('./modules/user/user.routes');
+const financeRoutes = require('./modules/finance/finance.routes');
 
 // ==========================================
 // 4. ROUTING AREA PUBLIK
@@ -104,6 +107,7 @@ app.get('/admin/dashboard', requireAuth, checkPermission('dashboard'), (req, res
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);
 app.use('/admin/settings', requireAuth, checkPermission('settings'), settingsRoutes);
 app.use('/admin/users', requireAuth, userRoutes);
+app.use('/admin/finance', requireAuth, checkPermission('finance'), financeRoutes);
 
 // Menjalankan Server di 0.0.0.0
 app.listen(port, '0.0.0.0', () => {

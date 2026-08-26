@@ -86,6 +86,26 @@
             </div>
         <% } %>
 
+        <!-- Menu Bertingkat Keuangan Masjid -->
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('finance'))) { %>
+            <div>
+                <button onclick="toggleFinanceMenu()" class="w-full flex items-center justify-between gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors focus:outline-none">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Modul Keuangan</span>
+                    </div>
+                    <svg id="finance-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <!-- Sub-menu -->
+                <div id="finance-submenu" class="hidden mt-1 space-y-1 pl-11 pr-4">
+                    <a href="/admin/finance" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Rekapitulasi Kas</a>
+                    <a href="/admin/finance/tambah" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Catat Transaksi</a>
+                    <a href="/admin/finance/categories" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Kategori Pembayaran</a>
+                </div>
+            </div>
+        <% } %>
+
         <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('users'))) { %>
             <a href="/admin/users" class="flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>            
@@ -207,6 +227,11 @@
     function toggleZakatMenu() {
         document.getElementById('zakat-submenu').classList.toggle('hidden');
         document.getElementById('zakat-arrow').classList.toggle('rotate-180');
+    }
+
+    function toggleFinanceMenu() {
+        document.getElementById('finance-submenu').classList.toggle('hidden');
+        document.getElementById('finance-arrow').classList.toggle('rotate-180');
     }
 
     function updateClock() {
