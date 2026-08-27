@@ -42,7 +42,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold uppercase mb-1 text-gray-600">No. Telepon</label>
-                            <input type="text" name="telepon" value="<%= event.telepon %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                            <input type="text" name="telepon" value="<%= event.telepon || '' %>" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" placeholder="(0274) XXXXXX">
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Ganti Logo (Opsional)</label>

@@ -106,12 +106,14 @@ exports.inputForm = (req, res) => {
 
                 const defaultNama = settings.mosque_name || 'Masjid';
                 const defaultAlamat = settings.mosque_address || '';
+                const defaultTelepon = settings.mosque_phone || '';
                 const defaultLogo = settings.logo || ''; // Ambil master logo aplikasi
 
                 return res.render('zakat/wizard-event', { 
                     title: 'Setup Periode Zakat',
                     defaultNama,
                     defaultAlamat,
+                    defaultTelepon,
                     defaultLogo
                 });
             });

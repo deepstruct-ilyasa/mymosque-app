@@ -89,7 +89,7 @@ exports.daftarTransaksi = (req, res) => {
                         nama_masjid: activeClosing.nama_masjid || globalSettings.mosque_name || 'MASJID AL-MUHARRAR',
                         sub_judul: activeClosing.sub_judul || 'Laporan Pertanggungjawaban Keuangan',
                         alamat: activeClosing.alamat || globalSettings.mosque_address || '',
-                        telepon: activeClosing.telepon || '',
+                        telepon: activeClosing.telepon || globalSettings.mosque_phone || '',
                         logo: activeClosing.logo || globalSettings.logo || '',
                         nama_ketua: activeClosing.nama_ketua || '',
                         jabatan_ketua: activeClosing.jabatan_ketua || 'Ketua Takmir',

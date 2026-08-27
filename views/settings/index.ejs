@@ -19,29 +19,38 @@
             <!-- Input Alamat Masjid -->
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Alamat Lengkap Masjid</label>
-                <textarea name="mosque_address" rows="2" required class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Contoh: Jl. Sudirman No. 123..."><%= settings.mosque_address || '' %></textarea>
+                <textarea name="mosque_address" rows="2" required class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Contoh: Dukuh XII Sumbersari Moyudan Sleman DI Yogyakarta, 55563"><%= settings.mosque_address || '' %></textarea>
             </div>
 
-            <!-- Input Logo Masjid -->
-            <div>
-                <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Logo Aplikasi / Masjid</label>
+            <!-- Layout Grid: 1 Kolom di HP (Mobile), 2 Kolom Sejajar di Desktop (md) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                <!-- Preview Logo Lama Jika Ada -->
-                <div class="flex items-center gap-3 mb-2">
-                    <% if(typeof appSettings !== 'undefined' && appSettings.logo) { %>
-                        <div class="w-16 h-16 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                            <img src="/uploads/<%= appSettings.logo %>" alt="Logo Utama" class="w-full h-full object-contain">
-                        </div>
-                        <span class="text-[11px] text-gray-500">Logo utama saat ini.</span>
-                        <!-- Input hidden untuk menyimpan nama file lama jika tidak diganti -->
-                        <input type="hidden" name="old_logo" value="<%= appSettings.logo %>">
-                    <% } else { %>
-                        <div class="text-[11px] text-gray-400 italic">Belum ada logo utama yang diatur.</div>
-                    <% } %>
+                <!-- Input Kontak / No Telepon -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">No. Telepon / Kontak Masjid</label>
+                    <input type="text" name="mosque_phone" value="<%= settings.mosque_phone || '' %>" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Contoh: 081234567890 / (0274) 123456">
                 </div>
 
-                <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-gray-50">
-                <p class="text-[10px] text-gray-400 mt-1">Biarkan kosong jika tidak ingin mengubah logo.</p>
+                <!-- Input Logo Masjid -->
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-1 text-gray-600">Logo Aplikasi / Masjid</label>
+                    
+                    <!-- Preview Logo Lama Jika Ada -->
+                    <div class="flex items-center gap-3 mb-2">
+                        <% if(typeof appSettings !== 'undefined' && appSettings.logo) { %>
+                            <div class="w-16 h-16 border border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <img src="/uploads/<%= appSettings.logo %>" alt="Logo Utama" class="w-full h-full object-contain">
+                            </div>
+                            <span class="text-[11px] text-gray-500">Logo utama saat ini.</span>
+                            <!-- Input hidden untuk menyimpan nama file lama jika tidak diganti -->
+                            <input type="hidden" name="old_logo" value="<%= appSettings.logo %>">
+                        <% } %>
+                    </div>
+
+                    <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-gray-50">
+                    <p class="text-[10px] text-gray-400 mt-1">Biarkan kosong jika tidak ingin mengubah logo.</p>
+                </div>
+
             </div>
 
             <!-- Input Zona Waktu -->

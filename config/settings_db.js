@@ -24,7 +24,8 @@ settingsDb.serialize(() => {
                     ('app_name', 'MyMosque App'),
                     ('mosque_name', ''),
                     ('mosque_address', ''),
-                    ('logo', '')`);
+                    ('logo', ''),
+                    ('mosque_phone', '')`);
             }
         });
     });
