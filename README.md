@@ -4,12 +4,25 @@ Aplikasi Manajemen Masjid & Zakat berbasis Node.js, Express, EJS, Tailwind CSS, 
 
 ---
 
-## 🚀 Fitur Utama
-- **Modul Zakat & Fidyah Otomatis:** Perhitungan zakat fitrah dan logika kombinasi fidyah (beras/uang) yang akurat dan saling menggenapi.
-- **Dynamic RBAC & Permissions:** Pengaturan hak akses modul per pengguna secara fleksibel dan terpusat.
-- **Keamanan Enterprise:** Enkripsi kata sandi menggunakan `bcrypt` dan manajemen sesi berbasis server.
-- **Widget Real-Time:** Jam digital real-time dan teks berjalan (*running text*) informasi masjid.
-- **Struktur Ringan:** Menggunakan SQLite sehingga sangat mudah di-deploy tanpa konfigurasi database server yang rumit.
+## 🚀 Fitur Utama & Modul Sistem
+
+1. **Modul Manajemen Keuangan & Kas Masjid (`finance.db`)**
+   - **Pencatatan Transaksi:** Pengelolaan kas masuk dan kas keluar lengkap dengan lampiran file bukti transaksi.
+   - **Sistem Tutup Buku & Snapshot Arsip (`monthly_closings`):** Mengunci laporan keuangan bulanan secara permanen untuk menjaga integritas historis data. Sistem secara otomatis menyalin dan mengamankan logo lembaga khusus untuk periode tersebut.
+   - **Pusat Arsip & Laporan (Report Center):** Navigasi berbasis kartu interaktif untuk melihat kembali, mencetak, atau mengedit data arsip laporan bulan-bulan sebelumnya secara independen tanpa saling mempengaruhi.
+   - **Cetak Laporan PDF A4 Profesional:** Tata letak dokumen resmi lengkap dengan Kop Surat dinamis dan tanda tangan ganda (Ketua & Bendahara/Sekretaris) beserta opsi input jabatan *Custom*.
+
+2. **Modul Zakat & Fidyah Otomatis (`zakat_db`)**
+   - **Wizard Setup Agenda Baru:** Pengaturan standar besaran Zakat Fitrah (beras/uang), Fidyah, dan Nisab Zakat Mal yang disesuaikan per periode/tahun hijriyah.
+   - **Kalkulator Kombinasi Akurat:** Perhitungan otomatis jumlah jiwa, konversi beras, uang tunai, hingga kelebihan pembayaran yang otomatis dikalkulasikan sebagai Infaq/Sedekah.
+   - **Cetak Rekapitulasi Zakat A4:** Format laporan multi-halaman berstandar cetak profesional dengan pembagian ringkasan eksekutif dan rincian per kategori muzakki.
+
+3. **Modul Pengaturan Sistem & Identitas (`app_settings.db`)**
+   - **Identitas Terpusat:** Pengaturan nama masjid, alamat lengkap, nomor telepon/kontak, zona waktu, dan logo utama aplikasi yang otomatis menjadi nilai *default* cerdas bagi modul keuangan dan zakat.
+
+4. **Keamanan & Kontrol Akses Enterprise**
+   - **Dynamic RBAC & Granular Permissions:** Pengaturan hak akses modul per pengguna secara fleksibel.
+   - **Enkripsi Keamanan:** Perlindungan sandi menggunakan `bcrypt` dan manajemen sesi berbasis server.
 
 ---
 
@@ -51,7 +64,7 @@ Agar aplikasi tetap berjalan stabil, otomatis menyala saat server reboot, dan hi
   [Service]
   Type=simple
   User=root
-  WorkingDirectory=/root/var/www/mymosque-app
+  WorkingDirectory=/path-anda/mymosque-app
   ExecStart=/usr/bin/node app.js
   Restart=always
   RestartSec=10
