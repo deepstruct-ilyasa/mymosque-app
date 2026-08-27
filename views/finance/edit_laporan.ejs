@@ -1,0 +1,141 @@
+<%- include('../partials/header') %>
+
+<div class="max-w-3xl mx-auto p-4 md:p-6 mt-6 font-sans space-y-6">
+    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-200">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Edit Arsip Periode <%= closing.nama_bulan_teks %> <%= closing.tahun %></h1>
+                <p class="text-xs text-gray-500 mt-0.5">Perbarui informasi kop surat, alamat, atau nama pejabat penandatangan khusus untuk arsip bulan ini.</p>
+            </div>
+            <a href="/admin/finance/laporan" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-semibold">
+                ← Kembali
+            </a>
+        </div>
+
+        <form action="/admin/finance/laporan/edit/<%= closing.id %>" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="logo_lama" value="<%= closing.logo || '' %>">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Masjid <span class="text-rose-500">*</span></label>
+                    <input type="text" name="nama_masjid" value="<%= closing.nama_masjid %>" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Sub Judul Laporan</label>
+                    <input type="text" name="sub_judul" value="<%= closing.sub_judul %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Telepon / Kontak</label>
+                    <input type="text" name="telepon" value="<%= closing.telepon || '' %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Alamat Lengkap</label>
+                    <input type="text" name="alamat" value="<%= closing.alamat || '' %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+
+                <!-- PRATINJAU & GANTI LOGO DI EDIT_LAPORAN.EJS -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Logo Arsip</label>
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 border border-gray-200 rounded-2xl">
+                        <div class="w-16 h-16 bg-white border border-gray-300 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-xs">
+                            <% if (closing.logo) { %>
+                                <img src="/uploads/finance/<%= closing.logo %>" alt="Logo" class="w-full h-full object-contain">
+                            <% } else { %>
+                                <span class="text-[10px] text-gray-400 font-bold">Kosong</span>
+                            <% } %>
+                        </div>
+                        <div class="flex-grow">
+                            <!-- PASTIKAN ATRIBUT NAME BERISI "logo" -->
+                            <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white cursor-pointer">
+                            <p class="text-[10px] text-gray-500 mt-1">Unggah file baru jika ingin mengganti logo arsip periode ini.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TANDA TANGAN KIRI -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Tanda Tangan Kiri</p>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Pilihan Jabatan</label>
+                        <select id="editSelectJabatanKetua" onchange="handleEditJabatan('Ketua')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none">
+                            <option value="Ketua Takmir" <%= closing.jabatan_ketua === 'Ketua Takmir' ? 'selected' : '' %>>Ketua Takmir</option>
+                            <option value="Ketua Panitia" <%= closing.jabatan_ketua === 'Ketua Panitia' ? 'selected' : '' %>>Ketua Panitia</option>
+                            <option value="Custom" <%= closing.jabatan_ketua !== 'Ketua Takmir' && closing.jabatan_ketua !== 'Ketua Panitia' ? 'selected' : '' %>>Custom (Ketik Sendiri)</option>
+                        </select>
+                    </div>
+
+                    <div id="editWrapperCustomKetua" class="<%= closing.jabatan_ketua !== 'Ketua Takmir' && closing.jabatan_ketua !== 'Ketua Panitia' ? '' : 'hidden' %>">
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Ketik Nama Jabatan Custom</label>
+                        <input type="text" id="editInputCustomKetua" value="<%= closing.jabatan_ketua !== 'Ketua Takmir' && closing.jabatan_ketua !== 'Ketua Panitia' ? closing.jabatan_ketua : '' %>" oninput="syncEditJabatan('Ketua')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+
+                    <input type="hidden" name="jabatan_ketua" id="editHiddenKetua" value="<%= closing.jabatan_ketua %>">
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Nama Pejabat</label>
+                        <input type="text" name="nama_ketua" value="<%= closing.nama_ketua || '' %>" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- TANDA TANGAN KANAN -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Tanda Tangan Kanan</p>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Pilihan Jabatan</label>
+                        <select id="editSelectJabatanSub" onchange="handleEditJabatan('Sub')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none">
+                            <option value="Bendahara" <%= closing.jabatan_subketua === 'Bendahara' ? 'selected' : '' %>>Bendahara</option>
+                            <option value="Sekretaris" <%= closing.jabatan_subketua === 'Sekretaris' ? 'selected' : '' %>>Sekretaris</option>
+                            <option value="Custom" <%= closing.jabatan_subketua !== 'Bendahara' && closing.jabatan_subketua !== 'Sekretaris' ? 'selected' : '' %>>Custom (Ketik Sendiri)</option>
+                        </select>
+                    </div>
+
+                    <div id="editWrapperCustomSub" class="<%= closing.jabatan_subketua !== 'Bendahara' && closing.jabatan_subketua !== 'Sekretaris' ? '' : 'hidden' %>">
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Ketik Nama Jabatan Custom</label>
+                        <input type="text" id="editInputCustomSub" value="<%= closing.jabatan_subketua !== 'Bendahara' && closing.jabatan_subketua !== 'Sekretaris' ? closing.jabatan_subketua : '' %>" oninput="syncEditJabatan('Sub')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+
+                    <input type="hidden" name="jabatan_subketua" id="editHiddenSub" value="<%= closing.jabatan_subketua %>">
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Nama Pejabat</label>
+                        <input type="text" name="nama_subketua" value="<%= closing.nama_subketua || '' %>" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-gray-100">
+                <a href="/admin/finance/laporan" class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold text-center transition-colors">
+                    Batal
+                </a>
+                <button type="submit" class="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function handleEditJabatan(target) {
+        const select = document.getElementById(target === 'Ketua' ? 'editSelectJabatanKetua' : 'editSelectJabatanSub');
+        const wrapperCustom = document.getElementById(target === 'Ketua' ? 'editWrapperCustomKetua' : 'editWrapperCustomSub');
+        const inputCustom = document.getElementById(target === 'Ketua' ? 'editInputCustomKetua' : 'editInputCustomSub');
+        const hiddenInput = document.getElementById(target === 'Ketua' ? 'editHiddenKetua' : 'editHiddenSub');
+
+        if (select.value === 'Custom') {
+            wrapperCustom.classList.remove('hidden');
+            hiddenInput.value = inputCustom.value;
+        } else {
+            wrapperCustom.classList.add('hidden');
+            hiddenInput.value = select.value;
+        }
+    }
+
+    function syncEditJabatan(target) {
+        const inputCustom = document.getElementById(target === 'Ketua' ? 'editInputCustomKetua' : 'editInputCustomSub');
+        const hiddenInput = document.getElementById(target === 'Ketua' ? 'editHiddenKetua' : 'editHiddenSub');
+        hiddenInput.value = inputCustom.value;
+    }
+</script>
+
+<%- include('../partials/footer') %>

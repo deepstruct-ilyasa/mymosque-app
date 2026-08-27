@@ -1,0 +1,241 @@
+<%- include('../partials/header', { title: typeof judul !== 'undefined' ? judul : 'Cetak Laporan Keuangan Masjid' }) %>
+
+<style>
+    /* Scoped styling khusus untuk kertas A4 agar tidak merusak font sidebar dashboard */
+    .a4-sheet {
+        font-family: 'Times New Roman', Times, serif;
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto 30px auto;
+        background: white;
+        padding: 20mm;
+        box-sizing: border-box;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .sheet-single {
+        justify-content: space-between;
+    }
+    .sheet-multi {
+        justify-content: flex-start;
+    }
+
+    .a4-sheet tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .a4-sheet table {
+        font-size: 10pt;
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8px;
+    }
+    
+    .a4-sheet th, .a4-sheet td {
+        padding: 6px 8px;
+    }
+
+    /* KUNCI UTAMA: Trik agar sidebar & header menghilang otomatis SAAT DICETAK */
+    @media print {
+        body * {
+            visibility: hidden; /* Sembunyikan semua elemen (termasuk sidebar/header) */
+        }
+        #printable-area, #printable-area * {
+            visibility: visible; /* Munculkan hanya area laporan */
+        }
+        #printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        .no-print {
+            display: none !important;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 0mm;
+        }
+        .a4-sheet {
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-height: 297mm !important;
+            padding: 20mm !important;
+            page-break-after: always;
+            break-after: page;
+            overflow: hidden;
+        }
+        .a4-sheet:last-child {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
+</style>
+
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Tombol Aksi & Navigasi (Sesuai gaya dashboard) -->
+    <div class="flex gap-3 no-print">
+        <a href="/admin/finance" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition shadow-sm">
+            ← Kembali ke Kas
+        </a>
+        <button onclick="window.print()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md flex items-center gap-2 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Cetak Laporan / PDF
+        </button>
+    </div>
+
+    <!-- AREA CETAK UTAMA (Yang akan dikirim ke Printer) -->
+    <div id="printable-area">
+        <% 
+            // Pagination sederhana untuk array transaksi jika barisnya banyak agar pas di A4
+            const perPage = 15;
+            let pagedTransactions = [];
+            if (transactions.length === 0) {
+                pagedTransactions = [[]];
+            } else {
+                for (let i = 0; i < transactions.length; i += perPage) {
+                    pagedTransactions.push(transactions.slice(i, i + perPage));
+                }
+            }
+            const totalPages = pagedTransactions.length; 
+        %>
+
+        <% pagedTransactions.forEach((pageTrxs, pageIndex) => { %>
+            <div class="a4-sheet text-gray-900 <%= totalPages === 1 ? 'sheet-single' : 'sheet-multi' %>">
+                <div>
+                    <!-- KOP SURAT MASJID (DINAMIS DARI SETTING / SNAPSHOT) -->
+                    <% if (pageIndex === 0) { %>
+                        <div class="border-b-4 border-double border-gray-900 pb-4 mb-6 flex items-center justify-between">
+                            <div class="w-24 flex-shrink-0 flex items-center justify-center">
+                                <% if (settings.logo) { %>
+                                    <img src="/uploads/finance/<%= settings.logo %>" alt="Logo Masjid" class="w-20 h-20 object-contain">
+                                <% } else { %>
+                                    <div class="w-16 h-16 border border-dashed border-gray-400 flex items-center justify-center text-[11px] text-gray-400 text-center rounded font-bold">LOGO</div>
+                                <% } %>
+                            </div>
+                            <div class="text-center flex-grow px-2">
+                                <h2 class="text-xl font-bold uppercase tracking-wider text-gray-700"><%= settings.sub_judul || 'Laporan Pertanggungjawaban Keuangan' %></h2>
+                                <h1 class="text-xl font-extrabold uppercase tracking-wide mt-1"><%= settings.nama_masjid || 'MASJID AL-MUHARRAR' %></h1>
+                                <% if (settings.alamat) { %>
+                                    <p class="text-xs text-gray-600 mt-1"><%= settings.alamat %></p>
+                                <% } %>
+                                <% if (settings.telepon) { %>
+                                    <p class="text-xs text-gray-600 mt-0.5">Telp: <%= settings.telepon %></p>
+                                <% } %>
+                            </div>
+                            <div class="w-24 flex-shrink-0"></div>
+                        </div>
+
+                        <div class="text-center mb-6">
+                            <h3 class="text-base font-bold uppercase">REKAPITULASI ARUS KAS KEUANGAN MASJID</h3>
+                            <p class="text-sm font-semibold text-gray-700 mt-1">Periode Bulan: <%= periodeBulan %> <%= periodeTahun %></p>
+                        </div>
+
+                        <!-- RINGKASAN EKSEKUTIF KEUANGAN (DENGAN SALDO AWAL) -->
+                        <div class="mb-6">
+                            <h4 class="text-xs font-bold uppercase tracking-wider mb-2">I. Ringkasan Eksekutif Keuangan</h4>
+                            <table class="w-full border-collapse border border-gray-400 text-xs text-left">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="border border-gray-400 p-2 text-center">Keterangan Saldo / Arus Kas</th>
+                                        <th class="border border-gray-400 p-2 text-right">Jumlah Nominal (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-gray-400 p-2 font-semibold">Saldo Awal (Per 1 <%= periodeBulan %> <%= periodeTahun %>)</td>
+                                        <td class="border border-gray-400 p-2 text-right font-bold text-gray-800">Rp <%= saldoAwal.toLocaleString('id-ID') %></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-400 p-2 font-semibold">Total Kas Masuk Bulan Ini</td>
+                                        <td class="border border-gray-400 p-2 text-right font-bold text-emerald-700">+ Rp <%= totalMasuk.toLocaleString('id-ID') %></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-gray-400 p-2 font-semibold">Total Kas Keluar Bulan Ini</td>
+                                        <td class="border border-gray-400 p-2 text-right font-bold text-rose-700">- Rp <%= totalKeluar.toLocaleString('id-ID') %></td>
+                                    </tr>
+                                    <tr class="bg-emerald-50">
+                                        <td class="border border-gray-400 p-2 font-extrabold text-emerald-900">Sisa Saldo Akhir Kas</td>
+                                        <td class="border border-gray-400 p-2 text-right font-extrabold text-emerald-900">Rp <%= saldoAkhir.toLocaleString('id-ID') %></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+
+                    <!-- TABEL RINCIAN TRANSAKSI -->
+                    <div class="mb-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider mb-2">
+                            II. Rincian Riwayat Transaksi <% if(totalPages > 1) { %>(Hal. <%= pageIndex + 1 %> dari <%= totalPages %>)<% } %>
+                        </h4>
+
+                        <table class="w-full border-collapse border border-gray-400 text-xs text-left">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-800 uppercase">
+                                    <th class="border border-gray-400 p-2 text-center w-10">No</th>
+                                    <th class="border border-gray-400 p-2 w-24">Tanggal</th>
+                                    <th class="border border-gray-400 p-2 w-24">Jenis</th>
+                                    <th class="border border-gray-400 p-2">Kategori & Keterangan</th>
+                                    <th class="border border-gray-400 p-2 text-right w-32">Jumlah (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (pageTrxs.length === 0) { %>
+                                    <tr>
+                                        <td colspan="5" class="border border-gray-400 p-4 text-center text-gray-400 italic">Belum ada data transaksi yang tercatat pada bulan ini.</td>
+                                    </tr>
+                                <% } else { %>
+                                    <% pageTrxs.forEach((trx, index) => { %>
+                                        <tr>
+                                            <td class="border border-gray-400 p-2 text-center text-gray-600"><%= (pageIndex * perPage) + index + 1 %></td>
+                                            <td class="border border-gray-400 p-2 font-medium"><%= trx.tanggal %></td>
+                                            <td class="border border-gray-400 p-2">
+                                                <% if (trx.jenis === 'masuk') { %>
+                                                    <span class="font-bold text-emerald-700">Kas Masuk</span>
+                                                <% } else { %>
+                                                    <span class="font-bold text-rose-700">Kas Keluar</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="border border-gray-400 p-2">
+                                                <span class="font-bold block"><%= trx.nama_kategori || 'Umum' %></span>
+                                                <span class="text-gray-600"><%= trx.keterangan || '-' %></span>
+                                            </td>
+                                            <td class="border border-gray-400 p-2 text-right font-bold <%= trx.jenis === 'masuk' ? 'text-emerald-700' : 'text-rose-700' %>">
+                                                <%= trx.jenis === 'masuk' ? '+' : '-' %> Rp <%= trx.jumlah.toLocaleString('id-ID') %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TANDA TANGAN PENGURUS DI HALAMAN TERAKHIR -->
+                <% if (pageIndex === totalPages - 1) { %>
+                    <div class="flex justify-between items-start pt-8 text-xs px-12 <%= totalPages === 1 ? 'mt-auto' : 'mt-16' %>">
+                        <div class="text-center">
+                            <p class="mb-16">Mengetahui,<br><strong><%= settings.jabatan_ketua || 'Ketua Takmir Masjid' %></strong></p>
+                            <p class="font-bold underline tracking-wide"><%= settings.nama_ketua || '( _________________________ )' %></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="mb-1">Ditetapkan, <%= tanggalCetak %></p>
+                            <p class="mb-16"><strong><%= settings.jabatan_subketua || 'Bendahara / Pengurus Kas' %></strong></p>
+                            <p class="font-bold underline tracking-wide"><%= settings.nama_subketua || '( _________________________ )' %></p>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

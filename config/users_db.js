@@ -39,7 +39,7 @@ usersDb.serialize(() => {
                     const allPerms = JSON.stringify(['dashboard', 'zakat', 'settings', 'users']);
                     usersDb.run(
                         `INSERT INTO users (username, password, nama_lengkap, role, permissions, foto) VALUES (?, ?, ?, ?, ?, NULL)`,
-                        ['admin', hashedPassword, 'Administrator Utama', 'Super Admin', allPerms]
+                        ['admin', hashedPassword, 'Administrator System', 'Super Admin', allPerms]
                     );
                     console.log('✅ Akun Super Admin default dibuat (admin / admin123)');
                 });

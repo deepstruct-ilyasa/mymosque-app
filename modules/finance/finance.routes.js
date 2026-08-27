@@ -24,5 +24,13 @@ router.post('/categories/tambah', categoryController.storeKategori);
 router.post('/categories/edit/:id', categoryController.updateKategori);
 router.post('/categories/hapus/:id', categoryController.hapusKategori);
 
+// Laporan Keuangan
+router.get('/laporan', financeController.formLaporan);
+router.get('/cetak', financeController.cetakLaporan);
+
+// Edit Monthly Closing Arsip
+router.get('/laporan/edit/:id', financeController.formEditLaporan);
+router.post('/laporan/edit/:id', financeController.updateLaporan);
+
 
 module.exports = router;

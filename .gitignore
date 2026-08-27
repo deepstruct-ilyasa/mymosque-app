@@ -9,7 +9,7 @@ public/uploads/zakat/*
 public/uploads/users/*
 !public/uploads/users/.gitkeep
 
-# Uploads Users (Abaikan isinya, kecuali .gitkeep)
+# Uploads Finance (Abaikan isinya, kecuali .gitkeep)
 public/uploads/finance/*
 !public/uploads/finance/.gitkeep
 

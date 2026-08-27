@@ -27,16 +27,13 @@
             <% } %>
 
             <!-- FORM FILTER BULAN & TAHUN -->
-            <form action="/admin/finance" method="GET" class="flex items-center gap-2">
-                <select name="bulan" class="border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none focus:ring-2 focus:ring-emerald-500">
+            <form action="/admin/finance" method="GET" id="filterForm" class="flex items-center gap-2">
+                <select name="bulan" id="selectBulan" onchange="document.getElementById('filterForm').submit()" class="border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
                     <% daftarBulan.forEach(b => { %>
                         <option value="<%= b.angka %>" <%= selectedBulan === b.angka ? 'selected' : '' %>><%= b.nama %></option>
                     <% }) %>
                 </select>
-                <input type="number" name="tahun" value="<%= selectedTahun %>" class="border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold w-20 text-center outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Tahun">
-                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
-                    Filter
-                </button>
+                <input type="number" name="tahun" id="inputTahun" value="<%= selectedTahun %>" onchange="document.getElementById('filterForm').submit()" class="border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold w-20 text-center outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Tahun">
             </form>
         </div>
     </div>
@@ -184,28 +181,132 @@
     </div>
 </div>
 
-<!-- MODAL KONFIRMASI TUTUP BUKU -->
-<div id="tutupBukuModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden">
-    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-95 opacity-0" id="tutupBukuContainer">
-        <div class="text-center">
-            <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+<!-- MODAL FORM TUTUP BUKU & IDENTITAS LAPORAN -->
+<div id="tutupBukuModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden overflow-y-auto p-4">
+    <div class="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full mx-auto shadow-2xl transform transition-all scale-95 opacity-0" id="tutupBukuContainer">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <span>🔒</span> Proses Tutup Buku & Arsip
+                </h3>
+                <p class="text-xs text-gray-500 mt-1">Lengkapi data Kop Surat dan Tanda Tangan untuk mengunci laporan bulan ini.</p>
             </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-1">Tutup Buku Periode Ini?</h3>
-            <p class="text-sm text-gray-500 mb-6">Setelah ditutup, seluruh transaksi pada bulan ini akan <strong>dikunci</strong> dan tidak dapat ditambah, diubah, atau dihapus lagi.</p>
-            <div class="flex space-x-3">
-                <button type="button" onclick="tutupModalTutupBuku()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">
+            <button type="button" onclick="tutupModalTutupBuku()" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form action="/admin/finance/tutup-buku" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="bulan" value="<%= selectedBulan %>">
+            <input type="hidden" name="tahun" value="<%= selectedTahun %>">
+            <input type="hidden" name="logo_lama" value="<%= lastClosing.logo || '' %>">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Masjid <span class="text-rose-500">*</span></label>
+                    <input type="text" name="nama_masjid" value="<%= lastClosing.nama_masjid || 'MASJID AL-MUHARRAR' %>" required class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Sub Judul Laporan</label>
+                    <input type="text" name="sub_judul" value="<%= lastClosing.sub_judul || 'Laporan Pertanggungjawaban Keuangan' %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Telepon / Kontak</label>
+                    <input type="text" name="telepon" value="<%= lastClosing.telepon || '' %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Alamat Lengkap</label>
+                    <input type="text" name="alamat" value="<%= lastClosing.alamat || '' %>" class="w-full border border-gray-300 p-2.5 rounded-xl text-sm">
+                </div>
+                
+                <!-- LOGO MASJID & PREVIEW -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Logo Masjid / Lembaga</label>
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 border border-gray-200 rounded-2xl">
+                        <!-- Pratinjau Logo -->
+                        <div class="w-16 h-16 bg-white border border-gray-300 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-xs">
+                            <% if (lastClosing.logo) { %>
+                                <!-- Jika logo ada (terambil dari app_settings.db atau arsip), tampilkan gambarnya -->
+                                <img id="logoPreviewImg" src="/uploads/<%= lastClosing.logo.startsWith('logo-closing') ? 'finance/' + lastClosing.logo : lastClosing.logo %>" alt="Logo" class="w-full h-full object-contain">
+                            <% } else { %>
+                                <!-- Jika kosong -->
+                                <span id="logoPlaceholderText" class-[10px] text-gray-400 font-bold text-center">Kosong</span>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Input File & Keterangan -->
+                        <div class="flex-grow">
+                            <input type="file" name="logo" id="logoInputFile" accept="image/*" onchange="previewLogoBaru(event)" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white cursor-pointer">
+                            <p class="text-[10px] text-gray-500 mt-1">Format: JPG, PNG. Unggah file baru jika ingin mengganti logo khusus laporan ini.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TANDA TANGAN -->
+                <!-- TANDA TANGAN KIRI (KETUA) -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Tanda Tangan Kiri</p>
+                    
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Pilihan Jabatan</label>
+                        <select id="selectJabatanKetua" onchange="handleJabatanChange('Ketua')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none">
+                            <option value="Ketua Takmir">Ketua Takmir</option>
+                            <option value="Ketua Panitia">Ketua Panitia</option>
+                            <option value="Custom">Custom (Ketik Sendiri)</option>
+                        </select>
+                    </div>
+
+                    <!-- Input teks jabatan custom -->
+                    <div id="wrapperCustomJabatanKetua" class="hidden">
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Ketik Nama Jabatan Custom</label>
+                        <input type="text" id="inputCustomJabatanKetua" placeholder="Contoh: Ketua Pembangunan" oninput="syncJabatan('Ketua')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+
+                    <input type="hidden" name="jabatan_ketua" id="hiddenJabatanKetua" value="Ketua Takmir">
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Nama Pejabat</label>
+                        <input type="text" name="nama_ketua" placeholder="Contoh: H. Ahmad Fulan" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- TANDA TANGAN KANAN (SUBKETUA / BENDAHARA) -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">Tanda Tangan Kanan</p>
+                    
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Pilihan Jabatan</label>
+                        <select id="selectJabatanSub" onchange="handleJabatanChange('Sub')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white font-semibold outline-none">
+                            <option value="Bendahara">Bendahara</option>
+                            <option value="Sekretaris">Sekretaris</option>
+                            <option value="Custom">Custom (Ketik Sendiri)</option>
+                        </select>
+                    </div>
+
+                    <!-- Input teks jabatan custom -->
+                    <div id="wrapperCustomJabatanSub" class="hidden">
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Ketik Nama Jabatan Custom</label>
+                        <input type="text" id="inputCustomJabatanSub" placeholder="Contoh: Wakil Bendahara" oninput="syncJabatan('Sub')" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+
+                    <input type="hidden" name="jabatan_subketua" id="hiddenJabatanSub" value="Bendahara">
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Nama Pejabat</label>
+                        <input type="text" name="nama_subketua" placeholder="Contoh: Muhammad Fulan" value="<%= lastClosing.nama_subketua || '' %>" class="w-full border border-gray-300 p-2 rounded-xl text-xs bg-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="tutupModalTutupBuku()" class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors">
                     Batal
                 </button>
-                <form action="/admin/finance/tutup-buku" method="POST" class="flex-1">
-                    <input type="hidden" name="bulan" value="<%= selectedBulan %>">
-                    <input type="hidden" name="tahun" value="<%= selectedTahun %>">
-                    <button type="submit" class="w-full px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
-                        Ya, Kunci Buku
-                    </button>
-                </form>
+                <button type="submit" class="flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
+                    Kunci & Tutup Buku
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -313,6 +414,46 @@
         container.classList.remove('scale-100', 'opacity-100');
         container.classList.add('scale-95', 'opacity-0');
         setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+
+    function previewLogoBaru(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.querySelector('.w-16.h-16');
+                // Cek apakah tag img sudah ada di dalam container
+                let img = document.getElementById('logoPreviewImg');
+                if (!img) {
+                    // Jika tadinya belum ada gambar (tertulis "Belum Ada"), buat elemen img baru
+                    previewContainer.innerHTML = `<img id="logoPreviewImg" src="" alt="Pratinjau Logo" class="w-full h-full object-contain">`;
+                    img = document.getElementById('logoPreviewImg');
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handleJabatanChange(target) {
+        const select = document.getElementById(target === 'Ketua' ? 'selectJabatanKetua' : 'selectJabatanSub');
+        const wrapperCustom = document.getElementById(target === 'Ketua' ? 'wrapperCustomJabatanKetua' : 'wrapperCustomJabatanSub');
+        const inputCustom = document.getElementById(target === 'Ketua' ? 'inputCustomJabatanKetua' : 'inputCustomJabatanSub');
+        const hiddenInput = document.getElementById(target === 'Ketua' ? 'hiddenJabatanKetua' : 'hiddenJabatanSub');
+
+        if (select.value === 'Custom') {
+            wrapperCustom.classList.remove('hidden');
+            hiddenInput.value = inputCustom.value; 
+        } else {
+            wrapperCustom.classList.add('hidden');
+            hiddenInput.value = select.value; 
+        }
+    }
+
+    function syncJabatan(target) {
+        const inputCustom = document.getElementById(target === 'Ketua' ? 'inputCustomJabatanKetua' : 'inputCustomJabatanSub');
+        const hiddenInput = document.getElementById(target === 'Ketua' ? 'hiddenJabatanKetua' : 'hiddenJabatanSub');
+        hiddenInput.value = inputCustom.value;
     }
 </script>
 
