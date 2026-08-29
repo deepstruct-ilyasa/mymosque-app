@@ -22,6 +22,7 @@ if (!fs.existsSync(uploadsDir)) {
 // Setelah folder dipastikan ada, aman untuk memuat file koneksi database
 require('./config/zakat_db');
 require('./config/finance_db');
+require('./config/display_db');
 const settingsDb = require('./config/settings_db');
 
 const app = express();
@@ -81,6 +82,8 @@ const zakatRoutes = require('./modules/zakat/zakat.routes');
 const settingsRoutes = require('./modules/settings/settings.routes');
 const userRoutes = require('./modules/user/user.routes');
 const financeRoutes = require('./modules/finance/finance.routes');
+const displayRoutes = require('./modules/display/display.routes');
+const displayController = require('./modules/display/display.controller');
 
 // ==========================================
 // 4. ROUTING AREA PUBLIK
@@ -104,10 +107,16 @@ app.get('/admin/dashboard', requireAuth, checkPermission('dashboard'), (req, res
     res.render('dashboard', { title: 'Dashboard Admin - MyMosque' });
 });
 
+app.get('/api/display-settings', displayController.getApiSettings);
+app.get('/display-sholat', (req, res) => {
+    res.render('display_sholat', { title: 'Display Sholat Masjid' });
+});
+
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);
 app.use('/admin/settings', requireAuth, checkPermission('settings'), settingsRoutes);
 app.use('/admin/users', requireAuth, userRoutes);
 app.use('/admin/finance', requireAuth, checkPermission('finance'), financeRoutes);
+app.use('/admin/display', requireAuth, checkPermission('settings'), displayRoutes);
 
 // Menjalankan Server di 0.0.0.0
 app.listen(port, '0.0.0.0', () => {

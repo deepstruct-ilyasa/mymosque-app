@@ -5,5 +5,6 @@ module.exports = [
     { key: 'settings', label: 'Pengaturan Sistem' },
     { key: 'users', label: 'Manajemen Pengguna' },
     { key: 'finance', label: 'Modul Keuangan Masjid' },
+    { key: 'display', label: 'Modul Display' },
     // { key: 'inventaris', label: 'Modul Inventaris' }
 ];

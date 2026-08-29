@@ -18,7 +18,7 @@ exports.updateSettings = (req, res) => {
         return res.status(400).send("Data form pengaturan tidak terkirim.");
     }
 
-    const { mosque_name, mosque_address, mosque_phone, timezone, old_logo } = req.body;
+    const { mosque_name, mosque_address, mosque_phone, timezone, old_logo, city, running_text } = req.body;
     
     // Ambil file logo baru jika ada yang di-upload lewat multer
     const logoBaru = req.file ? req.file.filename : null;

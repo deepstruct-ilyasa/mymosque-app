@@ -107,6 +107,26 @@
             </div>
         <% } %>
 
+                <!-- Menu Bertingkat Keuangan Masjid -->
+        <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('display'))) { %>
+            <div>
+                <button onclick="toggleDisplayMenu()" class="w-full flex items-center justify-between gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors focus:outline-none">
+                    <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>Modul Display</span>
+                    </div>
+                    <svg id="display-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <!-- Sub-menu -->
+                <div id="display-submenu" class="hidden mt-1 space-y-1 pl-11 pr-4">
+                    <a href="/admin/display/settings" class="block px-4 py-2 text-sm text-emerald-200 hover:text-white hover:bg-emerald-700 rounded-md transition-colors">Display Jadwal Sholat</a>
+                </div>
+            </div>
+        <% } %>
+
         <% if (currentUser && (currentUser.role === 'Super Admin' || currentUser.permissions.includes('users'))) { %>
             <a href="/admin/users" class="flex items-center gap-3 px-4 py-3 text-emerald-100 hover:bg-emerald-700 hover:text-white rounded-lg transition-colors">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>            
@@ -233,6 +253,11 @@
     function toggleFinanceMenu() {
         document.getElementById('finance-submenu').classList.toggle('hidden');
         document.getElementById('finance-arrow').classList.toggle('rotate-180');
+    }
+
+    function toggleDisplayMenu() {
+        document.getElementById('display-submenu').classList.toggle('hidden');
+        document.getElementById('display-arrow').classList.toggle('rotate-180');
     }
 
     function updateClock() {
