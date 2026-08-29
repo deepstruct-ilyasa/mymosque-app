@@ -14,6 +14,7 @@ public/uploads/finance/*
 !public/uploads/finance/.gitkeep
 
 public/uploads/*
+!public/uploads/tarkhim/tarkhim*
 !public/uploads/.gitkeep
 .env
 *.log
