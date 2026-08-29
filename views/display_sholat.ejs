@@ -9,15 +9,14 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; }
-        .marquee-content { display: inline-block; animation: marquee 55s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
         ::-webkit-scrollbar { display: none; }
+        
         .bg-islamic {
             background-color: #065f46; 
             background-image: radial-gradient(#047857 2px, transparent 2px);
             background-size: 30px 30px;
         }
+
         @keyframes blink-bg {
             0%, 100% { background-color: #064e3b; }
             50% { background-color: #059669; }
@@ -25,16 +24,29 @@
         .animate-blink-bg { animation: blink-bg 3s ease-in-out infinite; }
 
         .prayer-card {
-            background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
-            border: 2px solid #a7f3d0;
-            box-shadow: 0 15px 35px -5px rgba(6, 95, 70, 0.12), 0 10px 15px -5px rgba(6, 95, 70, 0.05);
-            transition: all 0.3s ease;
-        }
-        .prayer-card-highlight {
-            background: linear-gradient(145deg, #f59e0b 0%, #d97706 100%);
-            border: 2px solid #fde68a;
-            box-shadow: 0 15px 35px -5px rgba(245, 158, 11, 0.3);
-        }
+                background: linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(4, 47, 46, 0.9) 100%);
+                border: 2px solid rgba(252, 211, 77, 0.35);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+                transition: all 0.3s ease;
+            }
+            .prayer-card p {
+                color: #cbd5e1 !important;
+            }
+            .prayer-card h3, .prayer-card span, .prayer-card div.text-2xl {
+                color: #ffffff !important;
+            }
+            
+            .prayer-card-highlight {
+                background: linear-gradient(145deg, #f59e0b 0%, #b45309 100%) !important;
+                border: 2px solid #fde68a !important;
+                box-shadow: 0 15px 35px rgba(245, 158, 11, 0.6) !important;
+                transform: translateY(-4px);
+            }
+            .prayer-card-highlight p, 
+            .prayer-card-highlight h3, 
+            .prayer-card-highlight span {
+                color: #ffffff !important;
+            }
 
         .islamic-lux-frame {
             border: 8px double #fcd34d;
@@ -50,17 +62,18 @@
 
         .corner-ornament {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 110px;
+            height: 110px;
             border-color: #fcd34d;
-            border-style: solid;
+            border-style: double;
             pointer-events: none;
             z-index: 20;
+            background: radial-gradient(circle, rgba(252,211,77,0.15) 0%, transparent 70%);
         }
-        .corner-tl { top: 15px; left: 15px; border-width: 6px 0 0 6px; }
-        .corner-tr { top: 15px; right: 15px; border-width: 6px 6px 0 0; }
-        .corner-bl { bottom: 15px; left: 15px; border-width: 0 0 6px 6px; }
-        .corner-br { bottom: 15px; right: 15px; border-width: 0 6px 4px 6px; }
+        .corner-tl { top: 15px; left: 15px; border-width: 12px 0 0 12px; border-top-left-radius: 20px; }
+        .corner-tr { top: 15px; right: 15px; border-width: 12px 12px 0 0; border-top-right-radius: 20px; }
+        .corner-bl { bottom: 15px; left: 15px; border-width: 0 0 12px 12px; border-bottom-left-radius: 20px; }
+        .corner-br { bottom: 15px; right: 15px; border-width: 0 12px 12px 0; border-bottom-right-radius: 20px; }
 
         @keyframes pulse-glow {
             0%, 100% { box-shadow: 0 0 25px rgba(252, 211, 77, 0.5); }
@@ -69,7 +82,7 @@
         .glow-box { animation: pulse-glow 2.5s infinite; }
         
         .divider-line {
-            width: 250px;
+            width: 300px;
             height: 3px;
             background: linear-gradient(90deg, transparent, #fcd34d, transparent);
             margin: 15px auto;
@@ -81,75 +94,66 @@
     <!-- AUDIO PLAYER TERSEMBUNYI UNTUK TARKHIM -->
     <audio id="tarkhimPlayer" preload="auto"></audio>
 
-    <!-- PANEL TOMBOL SIMULASI -->
-    <!-- <div class="fixed top-4 right-4 z-[9999] bg-slate-900/90 border border-slate-700 p-2 rounded-2xl shadow-2xl flex items-center gap-2 backdrop-blur-md">
-        <span class="text-[10px] font-black text-amber-400 uppercase px-2">🛠️ CEK TAMPILAN:</span>
-        <button onclick="setActiveView('NORMAL'); stopTarkhim();" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Normal</button>
-        <button onclick="simulasiPrepAdzan();" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Prep Adzan</button>
-        <button onclick="setActiveView('ADZAN'); document.getElementById('labelAdzan').innerText='DZUHUR'; stopTarkhim();" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Adzan</button>
-        <button onclick="simulasiIqomah();" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Iqomah</button>
-        <button onclick="setActiveView('SHOLAT'); stopTarkhim();" class="bg-black hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition border border-slate-800">Sholat</button>
-    </div> -->
-
     <!-- VIEW 1: NORMAL -->
-    <div id="view-normal" class="flex flex-col h-full w-full transition-opacity duration-1000">
-        <header class="bg-islamic text-white shadow-lg flex-shrink-0 z-10 border-b-4 border-amber-400">
-            <div class="px-8 py-2 flex justify-between items-center">
+    <div id="view-normal" class="flex flex-col h-full w-full transition-opacity duration-1000 bg-slate-950 islamic-lux-frame relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#fcd34d 1.5px, transparent 1.5px); background-size: 40px 40px;"></div>
+
+        <header class="bg-slate-900/80 backdrop-blur-md text-white shadow-xl flex-shrink-0 z-10 border-b-4 border-amber-400/80">
+            <div class="px-8 py-3 flex justify-between items-center">
                 <div class="flex items-center gap-5">
-                    <div class="w-28 h-28 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div class="w-24 h-24 flex items-center justify-center overflow-hidden flex-shrink-0 bg-slate-950 rounded-2xl border-2 border-amber-400/40 shadow-inner">
                         <% if (typeof appSettings !== 'undefined' && appSettings.logo) { %>
                             <img src="/uploads/<%= appSettings.logo %>" alt="Logo Masjid" class="w-full h-full object-contain p-1">
                         <% } else { %>
-                            <svg class="w-9 h-9 text-emerald-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9 7h6l-3-5zm-5 7a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-9a2 2 0 00-2-2H7zm5 2a3 3 0 110 6 3 3 0 010-6zm-4.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
+                            <svg class="w-9 h-9 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9 7h6l-3-5zm-5 7a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-9a2 2 0 00-2-2H7zm5 2a3 3 0 110 6 3 3 0 010-6zm-4.5 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
                         <% } %>
                     </div>
                     <div>
                         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight uppercase text-amber-300 drop-shadow-md" id="labelNamaMasjid">
                             <%= appSettings.mosque_name || 'undefined' %>
                         </h1>
-                        <p class="text-emerald-100 font-semibold tracking-wide text-sm md:text-base uppercase mt-1" id="labelKotaHeader">
+                        <p class="text-emerald-300 font-semibold tracking-wide text-sm md:text-base uppercase mt-1" id="labelKotaHeader">
                             Memuat Kota...
                         </p>
                     </div>
                 </div>
-                <div class="text-right bg-emerald-950/40 px-6 py-3 rounded-xl border border-emerald-500/30">
+                <div class="text-right bg-slate-900/90 px-6 py-3 rounded-2xl border border-amber-400/30 shadow-lg backdrop-blur-md">
                     <h2 class="text-2xl md:text-4xl font-bold text-white tracking-wide" id="tanggalMasehi">Memuat...</h2>
                     <p class="text-amber-300 font-bold text-lg md:text-3xl mt-1 tracking-wider" id="tanggalHijriyah">Memuat...</p>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-50 to-slate-100 py-1">
+        <main class="flex-grow flex flex-col items-center justify-center relative py-1 z-10">
             <div class="text-center z-10">
-                <h2 class="text-[19rem] md:text-[22rem] font-black leading-none text-emerald-900 tracking-tighter flex items-baseline justify-center drop-shadow-xl" id="jamMenitDigital">
-                    00:00<span class="text-[14rem] md:text-[16rem] text-emerald-600 ml-2 font-extrabold animate-pulse" id="detikDigital">:00</span>
+                <h2 class="text-[25rem] md:text-[28rem] font-black leading-none text-white tracking-tighter flex items-baseline justify-center drop-shadow-[0_10px_30px_rgba(252,211,77,0.2)] font-mono" id="jamMenitDigital">
+                    00:00
                 </h2>
             </div>
         </main>
 
         <div class="px-6 pb-6 w-full max-w-[99vw] mx-auto z-10">
             <div class="grid grid-cols-7 gap-3 md:gap-4" id="jadwalContainer">
-                <div class="bg-white py-10 px-4 rounded-3xl shadow-xl border-t-8 border-emerald-600 text-center animate-pulse col-span-7">
-                    <p class="text-emerald-700 font-bold uppercase tracking-widest text-lg">Menyinkronkan Waktu Sholat...</p>
+                <div class="prayer-card py-10 px-4 rounded-3xl text-center animate-pulse col-span-7">
+                    <p class="text-emerald-300 font-bold uppercase tracking-widest text-lg">Menyinkronkan Waktu Sholat...</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VIEW 2: MENJELANG ADZAN (PREP ADZAN + TARKHIM) -->
-    <div id="view-prep-adzan" class="hidden absolute inset-0 z-40 bg-amber-900 islamic-lux-frame flex flex-col items-center justify-center text-center px-4 text-white">
+    <!-- VIEW 2: MENJELANG ADZAN (PREP ADZAN) -->
+    <div id="view-prep-adzan" class="hidden absolute inset-0 z-40 bg-amber-950 islamic-lux-frame flex flex-col items-center justify-center text-center px-4 text-white">
         <div class="corner-ornament corner-tl"></div>
         <div class="corner-ornament corner-tr"></div>
         <div class="corner-ornament corner-bl"></div>
         <div class="corner-ornament corner-br"></div>
 
         <div class="z-10 flex flex-col items-center max-w-5xl">
-            <div class="text-amber-300 text-4xl mb-1 tracking-[0.5em] font-bold">☪ 🕌 ☪</div>
-            <div class="divider-line"></div>
             <h2 class="text-3xl md:text-5xl font-black tracking-[0.25em] uppercase mb-2 text-amber-200 drop-shadow-lg">MENJELANG MASUK WAKTU</h2>
+            <div class="divider-line"></div>
             <h1 class="text-[7rem] md:text-[10rem] font-black tracking-tight text-white uppercase drop-shadow-2xl mb-6 leading-none text-yellow-300" id="labelPrepAdzan">DZUHUR</h1>
             <div class="divider-line"></div>
-            <div class="bg-amber-950/95 px-20 py-8 rounded-3xl border-4 border-amber-400 glow-box mb-6 shadow-2xl backdrop-blur-md">
+            <div class="bg-amber-900/95 px-20 py-8 rounded-3xl border-4 border-amber-400 glow-box mb-6 shadow-2xl backdrop-blur-md">
                 <h1 class="text-[8rem] md:text-[12rem] font-mono font-black tracking-tight text-amber-200 leading-none drop-shadow-md" id="countdownPrepAdzan">00:00</h1>
             </div>
             <p class="text-2xl md:text-4xl font-extrabold text-amber-100 animate-pulse tracking-wider bg-amber-800/60 px-8 py-3 rounded-2xl border border-amber-500/40">Bersiaplah Menuju Sholat Berjamaah</p>
@@ -164,9 +168,8 @@
         <div class="corner-ornament corner-br"></div>
 
         <div class="z-10 flex flex-col items-center max-w-5xl">
-            <div class="text-emerald-300 text-4xl mb-1 tracking-[0.5em] font-bold">☪ 🕋 ☪</div>
-            <div class="divider-line"></div>
             <h2 class="text-4xl md:text-6xl font-black tracking-[0.25em] uppercase mb-4 text-emerald-100 drop-shadow-lg">TELAH MASUK WAKTU</h2>
+            <div class="divider-line"></div>
             <h1 class="text-[8rem] md:text-[12rem] font-black tracking-tight text-white drop-shadow-2xl uppercase mb-6 leading-none text-amber-300" id="labelAdzan">SHOLAT</h1>
             <div class="divider-line"></div>
             <p class="text-3xl md:text-4xl font-black text-amber-200 tracking-wider drop-shadow-md bg-emerald-950/80 px-10 py-4 rounded-2xl border-2 border-emerald-400/50 shadow-2xl">Harap Tenang & Dengarkan Adzan</p>
@@ -181,9 +184,8 @@
         <div class="corner-ornament corner-br"></div>
 
         <div class="z-10 flex flex-col items-center max-w-5xl">
-            <div class="text-amber-400 text-4xl mb-1 tracking-[0.5em] font-bold">✦ ⏳ ✦</div>
-            <div class="divider-line"></div>
             <h2 class="text-3xl md:text-5xl font-black tracking-[0.25em] uppercase mb-2 text-slate-300 drop-shadow-lg">MENUJU IQOMAH</h2>
+            <div class="divider-line"></div>
             <h1 class="text-[6rem] md:text-[9rem] font-black tracking-tight text-emerald-400 uppercase drop-shadow-lg mb-6 leading-none" id="labelIqomah">SHOLAT</h1>
             <div class="divider-line"></div>
             <div class="bg-slate-900/95 px-20 py-8 rounded-3xl border-4 border-slate-700 glow-box mb-6 shadow-2xl">
@@ -201,7 +203,6 @@
         <div class="corner-ornament corner-br"></div>
 
         <div class="z-10 flex flex-col items-center max-w-6xl">
-            <div class="text-amber-400 text-6xl mb-4 animate-pulse">📵</div>
             <div class="divider-line"></div>
             <h1 class="text-4xl md:text-7xl font-black tracking-widest uppercase text-slate-100 drop-shadow-xl mb-6 leading-tight" id="labelPeringatanSholat">
                 MOHON NONAKTIFKAN ALAT KOMUNIKASI
@@ -218,14 +219,14 @@
                 PENGUMUMAN
             </span>
         </div>
-        <div class="marquee-container h-full flex items-center text-2xl md:text-3xl font-semibold text-white px-4 tracking-wide">
-            <div class="marquee-content" id="marqueeContent">
+        <div class="h-full flex items-center text-2xl md:text-3xl font-semibold text-white px-6 w-full overflow-hidden">
+            <div id="staticRunningText" class="transition-opacity duration-500 opacity-100">
                 Memuat pengumuman...
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT LOGIKA UTAMA + PEMUTAR TARKHIM OTOMATIS -->
+    <!-- SCRIPT LOGIKA UTAMA -->
     <script>
         let configDisplay = {
             city: "Yogyakarta",
@@ -244,6 +245,12 @@
         let lastFetchedCity = "";
         let timeOffset = 0;
         let isTarkhimPlaying = false;
+        let lastPlayedPrayerName = "";
+        let runningTextArray = ["Selamat datang di Masjid"];
+        let currentTextIndex = 0;
+        let currentTarkhimFile = "";
+        let isTarkhimStartedOnce = false;
+        let activeSimulationMode = null;
 
         const DURASI = {
             ADZAN: 1 * 60,
@@ -267,67 +274,62 @@
 
             if (viewName === 'NORMAL') {
                 vNormal.classList.remove('hidden');
-                stopTarkhim();
             } else if (viewName === 'PREP_ADZAN') {
                 vPrepAdzan.classList.remove('hidden');
-                startTarkhim();
             } else if (viewName === 'ADZAN') {
                 vAdzan.classList.remove('hidden');
-                stopTarkhim();
             } else if (viewName === 'IQOMAH') {
                 vIqomah.classList.remove('hidden');
-                stopTarkhim();
             } else if (viewName === 'SHOLAT' || viewName === 'KHUTBAH') {
                 vSholat.classList.remove('hidden');
                 footer.classList.add('hidden');
-                stopTarkhim();
             }
         }
 
-        // FUNGSI TARKHIM AUDIO
-        function startTarkhim() {
+        function startTarkhim(prayerName = "") {
             const player = document.getElementById('tarkhimPlayer');
+            if (!player) return;
+
+            if (isTarkhimStartedOnce && lastPlayedPrayerName === prayerName) {
+                return; 
+            }
+
             if (configDisplay.tarkhim_playlist && configDisplay.tarkhim_playlist.length > 0) {
-                if (!isTarkhimPlaying) {
-                    const randomFile = configDisplay.tarkhim_playlist[Math.floor(Math.random() * configDisplay.tarkhim_playlist.length)];
-                    player.loop = true;
-                    playAudioSafe(player, randomFile); // Menggunakan pemutar aman lokal
+                currentTarkhimFile = configDisplay.tarkhim_playlist[Math.floor(Math.random() * configDisplay.tarkhim_playlist.length)];
+                player.src = currentTarkhimFile;
+                player.loop = true; 
+                lastPlayedPrayerName = prayerName; 
+                
+                player.play().then(() => {
                     isTarkhimPlaying = true;
-                }
+                    isTarkhimStartedOnce = true;
+                    console.log(`Tarkhim (${prayerName}) terkunci & bernyanyi mulus.`);
+                }).catch(e => {
+                    console.warn("Autoplay dicegah browser:", e);
+                });
+            } else {
+                console.warn("Playlist tarkhim kosong!");
             }
         }
 
         function stopTarkhim() {
             const player = document.getElementById('tarkhimPlayer');
-            if (isTarkhimPlaying) {
+            if (player) {
                 player.pause();
                 player.currentTime = 0;
-                isTarkhimPlaying = false; // Reset status penanda
+                player.src = "";
+                isTarkhimPlaying = false; 
+                isTarkhimStartedOnce = false; 
+                lastPlayedPrayerName = ""; 
+                currentTarkhimFile = ""; 
+                console.log("Tarkhim dimatikan total secara bersih.");
             }
         }
 
-        // FUNGSI SIMULASI UNTUK TOMBOL DI POJOK KANAN ATAS
-        function simulasiPrepAdzan() {
-            setActiveView('PREP_ADZAN');
-            document.getElementById('labelPrepAdzan').innerText = "DZUHUR";
-            document.getElementById('countdownPrepAdzan').innerText = "00:59";
-        }
-
-        function simulasiIqomah() {
-            setActiveView('IQOMAH');
-            document.getElementById('labelIqomah').innerText = "DZUHUR";
-            document.getElementById('countdownIqomah').innerText = "09:45";
-        }
-
-        // FUNGSI PENYESUAIAN WAKTU BERDASARKAN TIMEZONE APLIKASI
         function getCorrectedTime() {
             const serverRawTime = new Date(Date.now() + timeOffset);
-            
-            // Ambil setting timezone dari config (bisa berupa "WIB", "WITA", "WIT", atau "Asia/Jayapura")
             let rawTz = (configDisplay.timezone || 'WIB').trim().toUpperCase();
-            
-            // Tentukan zona IANA yang valid untuk JavaScript
-            let ianaTimeZone = 'Asia/Jakarta'; // Default WIB
+            let ianaTimeZone = 'Asia/Jakarta';
 
             if (rawTz.includes('WITA') || rawTz.includes('MAKASSAR') || rawTz === 'ASIA/MAKASSAR') {
                 ianaTimeZone = 'Asia/Makassar';
@@ -336,19 +338,14 @@
             } else if (rawTz.includes('WIB') || rawTz.includes('JAKARTA') || rawTz === 'ASIA/JAKARTA') {
                 ianaTimeZone = 'Asia/Jakarta';
             } else if (rawTz.includes('/')) {
-                // Jika sudah format IANA (misal: 'Asia/Pontianak' dll)
                 ianaTimeZone = configDisplay.timezone;
             }
 
             try {
                 const formatter = new Intl.DateTimeFormat('en-US', {
                     timeZone: ianaTimeZone,
-                    year: 'numeric',
-                    month: 'numeric',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    second: 'numeric',
+                    year: 'numeric', month: 'numeric', day: 'numeric',
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
                     hour12: false
                 });
 
@@ -365,16 +362,15 @@
                 });
 
                 if (tzHour === 24) tzHour = 0;
-
                 return new Date(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
-
             } catch (e) {
-                console.error("Gagal parse timezone:", e);
                 return serverRawTime;
             }
         }
 
         function evaluatePrayerState(correctedTime) {
+            if (activeSimulationMode) return;
+
             const timeNowSec = (correctedTime.getHours() * 3600) + (correctedTime.getMinutes() * 60) + correctedTime.getSeconds();
             const isJumat = (correctedTime.getDay() === 5);
 
@@ -382,20 +378,20 @@
             let activePrayerName = '';
             let countdownValue = 0;
             let prepCountdownValue = 0;
-            let shouldPlayTarkhim = false; // Status penanda apakah tarkhim harus bunyi
+            let shouldPlayTarkhim = false; 
 
             let durasiAdzanSec = (configDisplay.durasi_adzan || 3) * 60;
             let durasiKhutbahSec = (configDisplay.durasi_khutbah || 45) * 60;
             
-            // Konversi setting menit tarkhim dari database ke detik (default 15 menit jika kosong)
-            let tarkhimSecsBefore = (configDisplay.prep_tarkhim_menit || 15) * 60;
+            let tarkhimMnitConfig = parseInt(configDisplay.prep_tarkhim_menit);
+            let tarkhimSecsBefore = (isNaN(tarkhimMnitConfig) ? 10 : tarkhimMnitConfig) * 60;
 
             for (const [nama, waktu] of Object.entries(jadwalHariIni)) {
                 if (nama === 'Imsak' || nama === 'Terbit') continue;
 
                 const [pHour, pMin] = waktu.split(':').map(Number);
                 const prayerTimeSec = (pHour * 3600) + (pMin * 60);
-                const diff = timeNowSec - prayerTimeSec; // Negatif berarti sebelum waktu sholat
+                const diff = timeNowSec - prayerTimeSec; 
 
                 let keyName = nama === "JUM'AT" ? "Dzuhur" : nama;
                 let prepSecs = (configDisplay.prep_adzan && configDisplay.prep_adzan[keyName]) ? configDisplay.prep_adzan[keyName] : 60;
@@ -404,19 +400,20 @@
                 let sholatMnit = (configDisplay.sholat_duration && configDisplay.sholat_duration[keyName]) ? configDisplay.sholat_duration[keyName] : 15;
                 let sholatSecs = sholatMnit * 60;
 
-                // 1. Cek rentang waktu pemutaran Tarkhim otomatis (misal 15 menit sebelum adzan hingga waktu adzan tiba)
-                if (diff < 0 && Math.abs(diff) <= tarkhimSecsBefore) {
+                // --- 1. ATURAN AUDIO TARKHIM ---
+                if (!isJumat && diff < 0 && Math.abs(diff) <= tarkhimSecsBefore) {
                     shouldPlayTarkhim = true;
+                    activePrayerName = nama;
                 }
 
-                // 2. Cek Hitung Mundur Menjelang Adzan (Tampilan Visual Layar)
+                // --- 2. ATURAN TAMPILAN VIEW (PREP ADZAN) ---
                 if (diff < 0 && diff >= -prepSecs) {
-                    currentMode = 'PREP_ADZAN';
+                    currentMode = 'PREP_ADZAN'; 
                     activePrayerName = nama;
                     prepCountdownValue = Math.abs(diff);
                 }
 
-                // 3. Cek setelah waktu sholat masuk
+                // --- 3. ATURAN SETELAH MASUK WAKTU SHOLAT ---
                 if (diff >= 0) {
                     if (isJumat && nama === "JUM'AT") {
                         if (diff < durasiAdzanSec) {
@@ -440,20 +437,24 @@
                 }
             }
 
-            // Atur Tampilan Visual Layar
-            setActiveView(currentMode);
-
-            // Kontrol Audio Tarkhim secara independen dari tampilan visual
-            if (shouldPlayTarkhim || currentMode === 'PREP_ADZAN') {
-                startTarkhim(); // Nyalakan audio tarkhim syahdu
-            } else {
-                if (currentMode === 'NORMAL') {
-                    stopTarkhim(); // Matikan audio jika kembali ke mode normal di luar jam tarkhim
-                }
+            let visualViewMode = currentMode;
+            if (shouldPlayTarkhim && currentMode !== 'PREP_ADZAN' && currentMode !== 'ADZAN' && currentMode !== 'IQOMAH' && currentMode !== 'SHOLAT' && currentMode !== 'KHUTBAH') {
+                visualViewMode = 'NORMAL';
             }
 
-            // Render Teks & Angka Hitung Mundur Berdasarkan Mode (Aman dari Error Null)
-            if (currentMode === 'PREP_ADZAN') {
+            setActiveView(visualViewMode);
+
+            // --- KONTROL AUDIO TARKHIM ---
+            if (shouldPlayTarkhim && !isTarkhimStartedOnce) {
+                startTarkhim(activePrayerName);
+            } 
+            
+            if (currentMode === 'ADZAN') {
+                stopTarkhim();
+            }
+
+            // --- RENDER TAMPILAN HITUNG MUNDUR & MODE LAINNYA ---
+            if (visualViewMode === 'PREP_ADZAN') {
                 const elLabel = document.getElementById('labelPrepAdzan');
                 const elCount = document.getElementById('countdownPrepAdzan');
                 if (elLabel) elLabel.innerText = activePrayerName;
@@ -472,18 +473,14 @@
                 if (elIqomahCount) {
                     const m = String(Math.floor(countdownValue / 60)).padStart(2, '0');
                     const s = String(countdownValue % 60).padStart(2, '0');
-                    elIqomahCount.innerText = `${m}:${s}`;
+                    const newText = `${m}:${s}`;
+
+                    if (countdownValue <= 10 && countdownValue > 0 && elIqomahCount.innerText !== newText) {
+                        playBeep(countdownValue === 1); 
+                    }
+
+                    elIqomahCount.innerText = newText;
                 }
-            } else if (currentMode === 'KHUTBAH') {
-                const elPeringatan = document.getElementById('labelPeringatanSholat');
-                const elSub = document.getElementById('subLabelSholat');
-                if (elPeringatan) elPeringatan.innerText = "HARAP TENANG & DENGARKAN KHUTBAH JUM'AT";
-                if (elSub) elSub.innerText = "Mohon Nonaktifkan Alat Komunikasi";
-            } else if (currentMode === 'SHOLAT') {
-                const elPeringatan = document.getElementById('labelPeringatanSholat');
-                const elSub = document.getElementById('subLabelSholat');
-                if (elPeringatan) elPeringatan.innerText = "MOHON LURUSKAN SHAF & NONAKTIFKAN HP";
-                if (elSub) elSub.innerText = "Sholat Sedang Berlangsung";
             }
         }
 
@@ -513,7 +510,6 @@
                         'Isya': timings.Isha
                     };
 
-                    // SIMPAN JADWAL KE LOCALSTORAGE BERDASARKAN TANGGAL
                     localStorage.setItem('mosque_jadwal_' + dateStr, JSON.stringify({
                         jadwal: jadwalHariIni,
                         hijriyah: document.getElementById('tanggalHijriyah').innerText
@@ -522,7 +518,6 @@
                     renderJadwalCards();
                 }
             } catch (error) {
-                console.warn("Gagal ambil jadwal dari internet, memuat dari cache lokal...", error);
                 loadJadwalFromCacheOrFallback();
             }
         }
@@ -540,14 +535,6 @@
                 jadwalHariIni = parsed.jadwal;
                 document.getElementById('tanggalHijriyah').innerText = parsed.hijriyah + " (OFFLINE)";
                 renderJadwalCards();
-                console.log("Berhasil memuat jadwal sholat dari cache offline.");
-            } else {
-                // Fallback darurat jika cache sama sekali kosong
-                document.getElementById('jadwalContainer').innerHTML = `
-                    <div class="bg-amber-900 text-white py-8 px-4 rounded-3xl shadow-xl border-t-8 border-yellow-400 text-center col-span-7">
-                        <p class="font-bold uppercase tracking-widest text-lg">⚠️ MODE OFFLINE - MENUNGGU KONEKSI KE SERVER</p>
-                    </div>
-                `;
             }
         }
 
@@ -577,7 +564,6 @@
             let html = '';
             for (const [nama, waktu] of entries) {
                 const isNext = (nama === nextPrayerFound);
-                
                 const cardStyle = isNext 
                     ? 'prayer-card-highlight text-white rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center shadow-2xl relative overflow-hidden' 
                     : 'prayer-card text-slate-800 rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center';
@@ -599,15 +585,10 @@
         async function syncDisplaySettings() {
             try {
                 const res = await fetch('/api/display-settings');
-                if (!res.ok) throw new Error("Gagal terhubung ke server");
+                if (!res.ok) throw new Error("Gagal");
                 const data = await res.json();
                 
-                configDisplay = {
-                    ...data,
-                    timezone: data.timezone || configDisplay.timezone 
-                };
-
-                // SIMPAN KE LOCALSTORAGE SEBAGAI CADANGAN OFFLINE
+                configDisplay = { ...data, timezone: data.timezone || configDisplay.timezone };
                 localStorage.setItem('mosque_config_cache', JSON.stringify(configDisplay));
 
                 if (data.mosque_name) {
@@ -620,18 +601,15 @@
                 }
 
                 if (data.server_time) {
-                    const clientNow = Date.now();
-                    timeOffset = data.server_time - clientNow;
+                    timeOffset = data.server_time - Date.now();
                     localStorage.setItem('mosque_time_offset', timeOffset);
                 }
 
                 document.getElementById('labelKotaHeader').innerText = `KOTA ${data.city} & SEKITARNYA`;
 
                 let rawText = data.running_text || "Selamat datang di Masjid";
-                let arrayP = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
-                if (arrayP.length === 0) arrayP = ["Selamat datang di Masjid"];
-                let gabung = arrayP.join(' &nbsp;&nbsp;&nbsp; <span class="text-amber-400 text-3xl">🕌</span> &nbsp;&nbsp;&nbsp; ');
-                document.getElementById('marqueeContent').innerHTML = `${gabung} &nbsp;&nbsp;&nbsp; <span class="text-amber-400 text-3xl">🕌</span> &nbsp;&nbsp;&nbsp; ${gabung}`;
+                runningTextArray = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+                if (runningTextArray.length === 0) runningTextArray = ["Selamat datang di Masjid"];
 
                 const correctedNow = new Date(Date.now() + timeOffset);
                 if (lastFetchedCity !== data.city) {
@@ -640,40 +618,36 @@
                 } else {
                     renderJadwalCards();
                 }
-
             } catch (e) {
-                console.warn("Koneksi ke server/internet terputus. Menggunakan data cadangan offline...", e);
-                
-                // JIKA OFFLINE, AMBIL DARI LOCALSTORAGE
                 const cachedConfig = localStorage.getItem('mosque_config_cache');
                 const cachedOffset = localStorage.getItem('mosque_time_offset');
-                
-                if (cachedConfig) {
-                    configDisplay = JSON.parse(cachedConfig);
-                    document.getElementById('labelKotaHeader').innerText = `KOTA ${configDisplay.city} & SEKITARNYA (OFFLINE)`;
-
-                    if (configDisplay.mosque_name) {
-                        const elNama = document.getElementById('labelNamaMasjid');
-                        if (elNama) elNama.innerText = configDisplay.mosque_name;
-                    }
-                }
-                if (cachedOffset) {
-                    timeOffset = parseInt(cachedOffset);
-                }
-
-                // Coba muat jadwal sholat dari cache lokal juga
+                if (cachedConfig) configDisplay = JSON.parse(cachedConfig);
+                if (cachedOffset) timeOffset = parseInt(cachedOffset);
                 loadJadwalFromCacheOrFallback();
             }
         }
 
+        function initStaticRunningText() {
+            const el = document.getElementById('staticRunningText');
+            if (!el) return;
+            setInterval(() => {
+                if (runningTextArray.length > 0) {
+                    currentTextIndex = (currentTextIndex + 1) % runningTextArray.length;
+                    el.style.opacity = 0;
+                    setTimeout(() => {
+                        el.innerHTML = `<span class="text-amber-400 mr-2">🕌</span> ${runningTextArray[currentTextIndex]}`;
+                        el.style.opacity = 1;
+                    }, 300);
+                }
+            }, 6000);
+        }
+
         function tick() {
-            const correctedTime = getCorrectedTime(); // Menggunakan zona waktu dinamis (WIB/WITA/WIT)
-            
+            const correctedTime = getCorrectedTime();
             const jam = String(correctedTime.getHours()).padStart(2, '0');
             const menit = String(correctedTime.getMinutes()).padStart(2, '0');
-            const detik = String(correctedTime.getSeconds()).padStart(2, '0');
             
-            document.getElementById('jamMenitDigital').innerHTML = `${jam}:${menit}<span class="text-[5rem] md:text-[7rem] text-emerald-600 ml-4 font-black animate-pulse" id="detikDigital">:${detik}</span>`;
+            document.getElementById('jamMenitDigital').innerHTML = `${jam}:${menit}`;
             
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('tanggalMasehi').innerText = correctedTime.toLocaleDateString('id-ID', options);
@@ -684,39 +658,59 @@
             }
         }
 
-        // Fungsi untuk mengunduh dan menyimpan playlist tarkhim ke Cache browser
         async function cacheTarkhimAudio(playlist) {
             try {
                 for (const url of playlist) {
-                    // Cek apakah sudah pernah di-preload sebelumnya
                     if (!sessionStorage.getItem('cached_' + url)) {
                         const audio = new Audio();
                         audio.src = url;
                         audio.preload = 'auto';
                         sessionStorage.setItem('cached_' + url, 'true');
-                        console.log("Preload audio tarkhim berhasil:", url);
                     }
                 }
-            } catch (err) {
-                console.warn("Catatan preload audio:", err);
-            }
+            } catch (err) {}
         }
 
-        async function playAudioSafe(audioElement, url) {
+        function playBeep(isLongBeep = false) {
             try {
-                audioElement.src = url;
-                await audioElement.play();
-                console.log("Berhasil memutar audio tarkhim.");
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(isLongBeep ? 880 : 600, audioCtx.currentTime); 
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                
+                const duration = isLongBeep ? 0.7 : 0.12;
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
             } catch (e) {
-                console.warn("Gagal memutar audio (mungkin koneksi terputus):", e);
+                console.warn("Audio context tidak didukung browser:", e);
             }
         }
 
         syncDisplaySettings();
         tick();
+        initStaticRunningText();
 
-        setInterval(tick, 1000);
-        setInterval(syncDisplaySettings, 10000);
+        setInterval(tick, 10000); 
+
+        setInterval(() => {
+            const isPrepActive = !vPrepAdzan.classList.contains('hidden');
+            const isIqomahActive = !vIqomah.classList.contains('hidden');
+            
+            if (isPrepActive || isIqomahActive) {
+                const correctedTime = getCorrectedTime();
+                evaluatePrayerState(correctedTime);
+            }
+        }, 1000);
+
+        setInterval(syncDisplaySettings, 300000);
     </script>
 </body>
 </html>
