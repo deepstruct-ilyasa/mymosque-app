@@ -13,9 +13,17 @@ public/uploads/users/*
 public/uploads/finance/*
 !public/uploads/finance/.gitkeep
 
+# IZINKAN FOLDER TARKHIM AGAR TER-UPLOAD KE GITHUB (Kecuali file .gitkeep jika ada)
+public/uploads/tarkhim/*
+!public/uploads/tarkhim/.gitkeep
+
 public/uploads/*
-!public/uploads/tarkhim/tarkhim*
+!public/uploads/zakat/
+!public/uploads/users/
+!public/uploads/finance/
+!public/uploads/tarkhim/
 !public/uploads/.gitkeep
+
 .env
 *.log
 .DS_Store
