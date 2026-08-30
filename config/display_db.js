@@ -25,7 +25,7 @@ displayDb.serialize(() => {
                     ('iqomah_ashar', '10'),
                     ('iqomah_maghrib', '10'),
                     ('iqomah_isya', '10'),
-                    ('prep_tarkhim_menit', '10'),
+                    ('prep_tarkhim_detik', '0'),
                     ('prep_adzan_subuh', '60'),
                     ('prep_adzan_dzuhur', '60'),
                     ('prep_adzan_ashar', '60'),

@@ -228,489 +228,551 @@
 
     <!-- SCRIPT LOGIKA UTAMA -->
     <script>
-        let configDisplay = {
-            city: "Yogyakarta",
-            timezone: "Asia/Jakarta",
-            running_text: "Selamat datang di Masjid",
-            durasi_adzan: 3,
-            durasi_khutbah: 45,
-            prep_tarkhim_menit: 10,
-            tarkhim_playlist: [],
-            iqomah: { Subuh: 1, Dzuhur: 1, Ashar: 1, Maghrib: 1, Isya: 1 },
-            prep_adzan: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 },
-            sholat_duration: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 }
-        };
+    let configDisplay = {
+        city: "Yogyakarta",
+        timezone: "Asia/Jakarta",
+        running_text: "Selamat datang di Masjid",
+        durasi_adzan: 3,
+        durasi_khutbah: 45,
+        prep_tarkhim_detik: 600,
+        tarkhim_playlist: [],
+        iqomah: { Subuh: 1, Dzuhur: 1, Ashar: 1, Maghrib: 1, Isya: 1 },
+        prep_adzan: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 },
+        sholat_duration: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 }
+    };
 
-        let jadwalHariIni = {};
-        let lastFetchedCity = "";
-        let timeOffset = 0;
-        let isTarkhimPlaying = false;
-        let lastPlayedPrayerName = "";
-        let runningTextArray = ["Selamat datang di Masjid"];
-        let currentTextIndex = 0;
-        let currentTarkhimFile = "";
-        let isTarkhimStartedOnce = false;
-        let activeSimulationMode = null;
+    let jadwalHariIni = {};
+    let lastFetchedCity = "";
+    let timeOffset = 0;
+    let isTarkhimPlaying = false;
+    let lastPlayedPrayerName = "";
+    let runningTextArray = ["Selamat datang di Masjid"];
+    let currentTextIndex = 0;
+    let currentTarkhimFile = "";
+    let isTarkhimStartedOnce = false;
+    let activeSimulationMode = null;
 
-        const DURASI = {
-            ADZAN: 1 * 60,
-            KHUTBAH: 20 * 60
-        };
+    // Variabel tambahan untuk pemutaran sekuensial & durasi akumulasi lokal TV
+    let currentPlaylistIndex = 0;
+    let totalPlaylistDuration = 600; // Default cadangan (10 menit dalam detik)
 
-        const vNormal = document.getElementById('view-normal');
-        const vPrepAdzan = document.getElementById('view-prep-adzan');
-        const vAdzan = document.getElementById('view-adzan');
-        const vIqomah = document.getElementById('view-iqomah');
-        const vSholat = document.getElementById('view-sholat');
-        const footer = document.getElementById('footer-running-text');
+    const DURASI = {
+        ADZAN: 1 * 60,
+        KHUTBAH: 20 * 60
+    };
 
-        function setActiveView(viewName) {
-            vNormal.classList.add('hidden');
-            vPrepAdzan.classList.add('hidden');
-            vAdzan.classList.add('hidden');
-            vIqomah.classList.add('hidden');
-            vSholat.classList.add('hidden');
-            footer.classList.remove('hidden');
+    const vNormal = document.getElementById('view-normal');
+    const vPrepAdzan = document.getElementById('view-prep-adzan');
+    const vAdzan = document.getElementById('view-adzan');
+    const vIqomah = document.getElementById('view-iqomah');
+    const vSholat = document.getElementById('view-sholat');
+    const footer = document.getElementById('footer-running-text');
 
-            if (viewName === 'NORMAL') {
-                vNormal.classList.remove('hidden');
-            } else if (viewName === 'PREP_ADZAN') {
-                vPrepAdzan.classList.remove('hidden');
-            } else if (viewName === 'ADZAN') {
-                vAdzan.classList.remove('hidden');
-            } else if (viewName === 'IQOMAH') {
-                vIqomah.classList.remove('hidden');
-            } else if (viewName === 'SHOLAT' || viewName === 'KHUTBAH') {
-                vSholat.classList.remove('hidden');
-                footer.classList.add('hidden');
-            }
+    function setActiveView(viewName) {
+        vNormal.classList.add('hidden');
+        vPrepAdzan.classList.add('hidden');
+        vAdzan.classList.add('hidden');
+        vIqomah.classList.add('hidden');
+        vSholat.classList.add('hidden');
+        footer.classList.remove('hidden');
+
+        if (viewName === 'NORMAL') {
+            vNormal.classList.remove('hidden');
+        } else if (viewName === 'PREP_ADZAN') {
+            vPrepAdzan.classList.remove('hidden');
+        } else if (viewName === 'ADZAN') {
+            vAdzan.classList.remove('hidden');
+        } else if (viewName === 'IQOMAH') {
+            vIqomah.classList.remove('hidden');
+        } else if (viewName === 'SHOLAT' || viewName === 'KHUTBAH') {
+            vSholat.classList.remove('hidden');
+            footer.classList.add('hidden');
         }
+    }
 
-        function startTarkhim(prayerName = "") {
-            const player = document.getElementById('tarkhimPlayer');
-            if (!player) return;
+    // --- FUNGSI PENGHITUNG AKUMULASI DURASI PLAYLIST (KHUSUS TV VIEW) ---
+    function getAudioDuration(url) {
+        return new Promise((resolve) => {
+            const audio = new Audio();
+            audio.src = url;
+            audio.onloadedmetadata = function() {
+                resolve(audio.duration);
+            };
+            audio.onerror = function() {
+                resolve(300); // Fallback 5 menit jika file gagal dimuat
+            };
+        });
+    }
 
-            if (isTarkhimStartedOnce && lastPlayedPrayerName === prayerName) {
-                return; 
-            }
-
-            if (configDisplay.tarkhim_playlist && configDisplay.tarkhim_playlist.length > 0) {
-                currentTarkhimFile = configDisplay.tarkhim_playlist[Math.floor(Math.random() * configDisplay.tarkhim_playlist.length)];
-                player.src = currentTarkhimFile;
-                player.loop = true; 
-                lastPlayedPrayerName = prayerName; 
-                
-                player.play().then(() => {
-                    isTarkhimPlaying = true;
-                    isTarkhimStartedOnce = true;
-                    console.log(`Tarkhim (${prayerName}) terkunci & bernyanyi mulus.`);
-                }).catch(e => {
-                    console.warn("Autoplay dicegah browser:", e);
-                });
-            } else {
-                console.warn("Playlist tarkhim kosong!");
-            }
-        }
-
-        function stopTarkhim() {
-            const player = document.getElementById('tarkhimPlayer');
-            if (player) {
-                player.pause();
-                player.currentTime = 0;
-                player.src = "";
-                isTarkhimPlaying = false; 
-                isTarkhimStartedOnce = false; 
-                lastPlayedPrayerName = ""; 
-                currentTarkhimFile = ""; 
-                console.log("Tarkhim dimatikan total secara bersih.");
-            }
-        }
-
-        function getCorrectedTime() {
-            const serverRawTime = new Date(Date.now() + timeOffset);
-            let rawTz = (configDisplay.timezone || 'WIB').trim().toUpperCase();
-            let ianaTimeZone = 'Asia/Jakarta';
-
-            if (rawTz.includes('WITA') || rawTz.includes('MAKASSAR') || rawTz === 'ASIA/MAKASSAR') {
-                ianaTimeZone = 'Asia/Makassar';
-            } else if (rawTz.includes('WIT') || rawTz.includes('JAYAPURA') || rawTz === 'ASIA/JAYAPURA') {
-                ianaTimeZone = 'Asia/Jayapura';
-            } else if (rawTz.includes('WIB') || rawTz.includes('JAKARTA') || rawTz === 'ASIA/JAKARTA') {
-                ianaTimeZone = 'Asia/Jakarta';
-            } else if (rawTz.includes('/')) {
-                ianaTimeZone = configDisplay.timezone;
-            }
-
+    async function calculateTotalPlaylistDuration(playlist) {
+        let totalSeconds = 0;
+        for (const url of playlist) {
             try {
-                const formatter = new Intl.DateTimeFormat('en-US', {
-                    timeZone: ianaTimeZone,
-                    year: 'numeric', month: 'numeric', day: 'numeric',
-                    hour: 'numeric', minute: 'numeric', second: 'numeric',
-                    hour12: false
-                });
-
-                const parts = formatter.formatToParts(serverRawTime);
-                let tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond;
-
-                parts.forEach(p => {
-                    if (p.type === 'year') tzYear = parseInt(p.value);
-                    if (p.type === 'month') tzMonth = parseInt(p.value) - 1;
-                    if (p.type === 'day') tzDay = parseInt(p.value);
-                    if (p.type === 'hour') tzHour = parseInt(p.value);
-                    if (p.type === 'minute') tzMinute = parseInt(p.value);
-                    if (p.type === 'second') tzSecond = parseInt(p.value);
-                });
-
-                if (tzHour === 24) tzHour = 0;
-                return new Date(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
+                const duration = await getAudioDuration(url);
+                totalSeconds += duration;
             } catch (e) {
-                return serverRawTime;
+                totalSeconds += 300;
             }
         }
 
-        function evaluatePrayerState(correctedTime) {
-            if (activeSimulationMode) return;
+        if (totalSeconds > 0) {
+            totalPlaylistDuration = totalSeconds;
+            let totalMinutes = Math.ceil(totalSeconds / 60);
+            console.log(`Total durasi playlist terhitung di TV: ${totalMinutes} menit (${totalSeconds} detik).`);
+        }
+    }
 
-            const timeNowSec = (correctedTime.getHours() * 3600) + (correctedTime.getMinutes() * 60) + correctedTime.getSeconds();
-            const isJumat = (correctedTime.getDay() === 5);
+    // --- FUNGSI PEMUTAR TARKHIM SEKUENSIAL (BERURUTAN) ---
+    function startTarkhim(prayerName = "") {
+        const player = document.getElementById('tarkhimPlayer');
+        if (!player) return;
 
-            let currentMode = 'NORMAL';
-            let activePrayerName = '';
-            let countdownValue = 0;
-            let prepCountdownValue = 0;
-            let shouldPlayTarkhim = false; 
+        if (isTarkhimStartedOnce && lastPlayedPrayerName === prayerName) {
+            return; 
+        }
 
-            let durasiAdzanSec = (configDisplay.durasi_adzan || 3) * 60;
-            let durasiKhutbahSec = (configDisplay.durasi_khutbah || 45) * 60;
+        if (configDisplay.tarkhim_playlist && configDisplay.tarkhim_playlist.length > 0) {
+            lastPlayedPrayerName = prayerName;
+            currentPlaylistIndex = 0; // Mulai dari file pertama
             
-            let tarkhimMnitConfig = parseInt(configDisplay.prep_tarkhim_menit);
-            let tarkhimSecsBefore = (isNaN(tarkhimMnitConfig) ? 10 : tarkhimMnitConfig) * 60;
+            playNextTarkhimFile(player, prayerName);
+        } else {
+            console.warn("Playlist tarkhim kosong!");
+        }
+    }
 
-            for (const [nama, waktu] of Object.entries(jadwalHariIni)) {
-                if (nama === 'Imsak' || nama === 'Terbit') continue;
+    function playNextTarkhimFile(player, prayerName) {
+        if (configDisplay.tarkhim_playlist && currentPlaylistIndex < configDisplay.tarkhim_playlist.length) {
+            currentTarkhimFile = configDisplay.tarkhim_playlist[currentPlaylistIndex];
+            player.src = currentTarkhimFile;
+            player.loop = false; // Nonaktifkan loop tunggal karena urutan playlist
 
-                const [pHour, pMin] = waktu.split(':').map(Number);
-                const prayerTimeSec = (pHour * 3600) + (pMin * 60);
-                const diff = timeNowSec - prayerTimeSec; 
+            player.play().then(() => {
+                isTarkhimPlaying = true;
+                isTarkhimStartedOnce = true;
+                console.log(`Memutar tarkhim (${prayerName}) file ke-${currentPlaylistIndex + 1}: ${currentTarkhimFile}`);
+            }).catch(e => {
+                console.warn("Autoplay dicegah browser:", e);
+            });
 
-                let keyName = nama === "JUM'AT" ? "Dzuhur" : nama;
-                let prepSecs = (configDisplay.prep_adzan && configDisplay.prep_adzan[keyName]) ? configDisplay.prep_adzan[keyName] : 60;
-                let durasiIqomahMnit = (configDisplay.iqomah && configDisplay.iqomah[keyName]) ? configDisplay.iqomah[keyName] : 10;
-                let durasiIqomahSec = durasiIqomahMnit * 60;
-                let sholatMnit = (configDisplay.sholat_duration && configDisplay.sholat_duration[keyName]) ? configDisplay.sholat_duration[keyName] : 15;
-                let sholatSecs = sholatMnit * 60;
+            // Begitu file habis, otomatis lanjut ke file berikutnya secara sekuensial!
+            player.onended = function() {
+                currentPlaylistIndex++;
+                playNextTarkhimFile(player, prayerName);
+            };
+        } else {
+            console.log("Semua playlist tarkhim selesai diputar.");
+            isTarkhimPlaying = false;
+        }
+    }
 
-                // --- 1. ATURAN AUDIO TARKHIM ---
-                if (!isJumat && diff < 0 && Math.abs(diff) <= tarkhimSecsBefore) {
-                    shouldPlayTarkhim = true;
-                    activePrayerName = nama;
-                }
+    function stopTarkhim() {
+        const player = document.getElementById('tarkhimPlayer');
+        if (player) {
+            player.pause();
+            player.currentTime = 0;
+            player.src = "";
+            player.onended = null;
+            isTarkhimPlaying = false; 
+            isTarkhimStartedOnce = false; 
+            lastPlayedPrayerName = ""; 
+            currentTarkhimFile = ""; 
+            currentPlaylistIndex = 0;
+            console.log("Tarkhim dimatikan total secara bersih.");
+        }
+    }
 
-                // --- 2. ATURAN TAMPILAN VIEW (PREP ADZAN) ---
-                if (diff < 0 && diff >= -prepSecs) {
-                    currentMode = 'PREP_ADZAN'; 
-                    activePrayerName = nama;
-                    prepCountdownValue = Math.abs(diff);
-                }
+    function getCorrectedTime() {
+        const serverRawTime = new Date(Date.now() + timeOffset);
+        let rawTz = (configDisplay.timezone || 'WIB').trim().toUpperCase();
+        let ianaTimeZone = 'Asia/Jakarta';
 
-                // --- 3. ATURAN SETELAH MASUK WAKTU SHOLAT ---
-                if (diff >= 0) {
-                    if (isJumat && nama === "JUM'AT") {
-                        if (diff < durasiAdzanSec) {
-                            currentMode = 'ADZAN';
-                            activePrayerName = nama;
-                        } else if (diff < (durasiAdzanSec + durasiKhutbahSec)) {
-                            currentMode = 'KHUTBAH';
-                        }
-                    } else {
-                        if (diff < durasiAdzanSec) {
-                            currentMode = 'ADZAN';
-                            activePrayerName = nama;
-                        } else if (diff < (durasiAdzanSec + durasiIqomahSec)) {
-                            currentMode = 'IQOMAH';
-                            activePrayerName = nama;
-                            countdownValue = (durasiAdzanSec + durasiIqomahSec) - diff;
-                        } else if (diff < (durasiAdzanSec + durasiIqomahSec + sholatSecs)) {
-                            currentMode = 'SHOLAT';
-                        }
+        if (rawTz.includes('WITA') || rawTz.includes('MAKASSAR') || rawTz === 'ASIA/MAKASSAR') {
+            ianaTimeZone = 'Asia/Makassar';
+        } else if (rawTz.includes('WIT') || rawTz.includes('JAYAPURA') || rawTz === 'ASIA/JAYAPURA') {
+            ianaTimeZone = 'Asia/Jayapura';
+        } else if (rawTz.includes('WIB') || rawTz.includes('JAKARTA') || rawTz === 'ASIA/JAKARTA') {
+            ianaTimeZone = 'Asia/Jakarta';
+        } else if (rawTz.includes('/')) {
+            ianaTimeZone = configDisplay.timezone;
+        }
+
+        try {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: ianaTimeZone,
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hour12: false
+            });
+
+            const parts = formatter.formatToParts(serverRawTime);
+            let tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond;
+
+            parts.forEach(p => {
+                if (p.type === 'year') tzYear = parseInt(p.value);
+                if (p.type === 'month') tzMonth = parseInt(p.value) - 1;
+                if (p.type === 'day') tzDay = parseInt(p.value);
+                if (p.type === 'hour') tzHour = parseInt(p.value);
+                if (p.type === 'minute') tzMinute = parseInt(p.value);
+                if (p.type === 'second') tzSecond = parseInt(p.value);
+            });
+
+            if (tzHour === 24) tzHour = 0;
+            return new Date(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
+        } catch (e) {
+            return serverRawTime;
+        }
+    }
+
+    function evaluatePrayerState(correctedTime) {
+        if (activeSimulationMode) return;
+
+        const timeNowSec = (correctedTime.getHours() * 3600) + (correctedTime.getMinutes() * 60) + correctedTime.getSeconds();
+        const isJumat = (correctedTime.getDay() === 5);
+
+        let currentMode = 'NORMAL';
+        let activePrayerName = '';
+        let countdownValue = 0;
+        let prepCountdownValue = 0;
+        let shouldPlayTarkhim = false; 
+
+        let durasiAdzanSec = (configDisplay.durasi_adzan || 3) * 60;
+        let durasiKhutbahSec = (configDisplay.durasi_khutbah || 45) * 60;
+        
+        // Waktu mulai tarkhim berpedoman penuh pada data database (prep_tarkhim_menit dikonversi ke detik)
+        let tarkhimDetikConfig = parseInt(configDisplay.prep_tarkhim_detik || configDisplay.prep_tarkhim_menit);
+        let tarkhimSecsBefore = isNaN(tarkhimDetikConfig) ? 600 : tarkhimDetikConfig;
+
+        for (const [nama, waktu] of Object.entries(jadwalHariIni)) {
+            if (nama === 'Imsak' || nama === 'Terbit') continue;
+
+            const [pHour, pMin] = waktu.split(':').map(Number);
+            const prayerTimeSec = (pHour * 3600) + (pMin * 60);
+            const diff = timeNowSec - prayerTimeSec; 
+
+            let keyName = nama === "JUM'AT" ? "Dzuhur" : nama;
+            let prepSecs = (configDisplay.prep_adzan && configDisplay.prep_adzan[keyName]) ? configDisplay.prep_adzan[keyName] : 60;
+            let durasiIqomahMnit = (configDisplay.iqomah && configDisplay.iqomah[keyName]) ? configDisplay.iqomah[keyName] : 10;
+            let durasiIqomahSec = durasiIqomahMnit * 60;
+            let sholatMnit = (configDisplay.sholat_duration && configDisplay.sholat_duration[keyName]) ? configDisplay.sholat_duration[keyName] : 15;
+            let sholatSecs = sholatMnit * 60;
+
+            // --- 1. ATURAN AUDIO TARKHIM ---
+            if (!isJumat && diff < 0 && Math.abs(diff) <= tarkhimSecsBefore) {
+                shouldPlayTarkhim = true;
+                activePrayerName = nama;
+            }
+
+            // --- 2. ATURAN TAMPILAN VIEW (PREP ADZAN) ---
+            if (diff < 0 && diff >= -prepSecs) {
+                currentMode = 'PREP_ADZAN'; 
+                activePrayerName = nama;
+                prepCountdownValue = Math.abs(diff);
+            }
+
+            // --- 3. ATURAN SETELAH MASUK WAKTU SHOLAT ---
+            if (diff >= 0) {
+                if (isJumat && nama === "JUM'AT") {
+                    if (diff < durasiAdzanSec) {
+                        currentMode = 'ADZAN';
+                        activePrayerName = nama;
+                    } else if (diff < (durasiAdzanSec + durasiKhutbahSec)) {
+                        currentMode = 'KHUTBAH';
+                    }
+                } else {
+                    if (diff < durasiAdzanSec) {
+                        currentMode = 'ADZAN';
+                        activePrayerName = nama;
+                    } else if (diff < (durasiAdzanSec + durasiIqomahSec)) {
+                        currentMode = 'IQOMAH';
+                        activePrayerName = nama;
+                        countdownValue = (durasiAdzanSec + durasiIqomahSec) - diff;
+                    } else if (diff < (durasiAdzanSec + durasiIqomahSec + sholatSecs)) {
+                        currentMode = 'SHOLAT';
                     }
                 }
             }
-
-            let visualViewMode = currentMode;
-            if (shouldPlayTarkhim && currentMode !== 'PREP_ADZAN' && currentMode !== 'ADZAN' && currentMode !== 'IQOMAH' && currentMode !== 'SHOLAT' && currentMode !== 'KHUTBAH') {
-                visualViewMode = 'NORMAL';
-            }
-
-            setActiveView(visualViewMode);
-
-            // --- KONTROL AUDIO TARKHIM ---
-            if (shouldPlayTarkhim && !isTarkhimStartedOnce) {
-                startTarkhim(activePrayerName);
-            } 
-            
-            if (currentMode === 'ADZAN') {
-                stopTarkhim();
-            }
-
-            // --- RENDER TAMPILAN HITUNG MUNDUR & MODE LAINNYA ---
-            if (visualViewMode === 'PREP_ADZAN') {
-                const elLabel = document.getElementById('labelPrepAdzan');
-                const elCount = document.getElementById('countdownPrepAdzan');
-                if (elLabel) elLabel.innerText = activePrayerName;
-                if (elCount) {
-                    const m = String(Math.floor(prepCountdownValue / 60)).padStart(2, '0');
-                    const s = String(prepCountdownValue % 60).padStart(2, '0');
-                    elCount.innerText = `${m}:${s}`;
-                }
-            } else if (currentMode === 'ADZAN') {
-                const elAdzan = document.getElementById('labelAdzan');
-                if (elAdzan) elAdzan.innerText = activePrayerName;
-            } else if (currentMode === 'IQOMAH') {
-                const elIqomahLabel = document.getElementById('labelIqomah');
-                const elIqomahCount = document.getElementById('countdownIqomah');
-                if (elIqomahLabel) elIqomahLabel.innerText = activePrayerName;
-                if (elIqomahCount) {
-                    const m = String(Math.floor(countdownValue / 60)).padStart(2, '0');
-                    const s = String(countdownValue % 60).padStart(2, '0');
-                    const newText = `${m}:${s}`;
-
-                    if (countdownValue <= 10 && countdownValue > 0 && elIqomahCount.innerText !== newText) {
-                        playBeep(countdownValue === 1); 
-                    }
-
-                    elIqomahCount.innerText = newText;
-                }
-            }
         }
 
-        async function fetchJadwalSholat(cityName, correctedTime = new Date()) {
-            try {
-                const dd = String(correctedTime.getDate()).padStart(2, '0');
-                const mm = String(correctedTime.getMonth() + 1).padStart(2, '0');
-                const yyyy = correctedTime.getFullYear();
-                const dateStr = `${dd}-${mm}-${yyyy}`;
-                const isJumat = (correctedTime.getDay() === 5);
-
-                const response = await fetch(`https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(cityName)}&country=Indonesia&method=11`);
-                const data = await response.json();
-
-                if (data && data.code === 200) {
-                    const timings = data.data.timings;
-                    const hijri = data.data.date.hijri;
-                    document.getElementById('tanggalHijriyah').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
-                    
-                    jadwalHariIni = {
-                        'Imsak': timings.Imsak,
-                        'Subuh': timings.Fajr,
-                        'Terbit': timings.Sunrise,
-                        [isJumat ? "JUM'AT" : "Dzuhur"]: timings.Dhuhr,
-                        'Ashar': timings.Asr,
-                        'Maghrib': timings.Maghrib,
-                        'Isya': timings.Isha
-                    };
-
-                    localStorage.setItem('mosque_jadwal_' + dateStr, JSON.stringify({
-                        jadwal: jadwalHariIni,
-                        hijriyah: document.getElementById('tanggalHijriyah').innerText
-                    }));
-
-                    renderJadwalCards();
-                }
-            } catch (error) {
-                loadJadwalFromCacheOrFallback();
-            }
+        let visualViewMode = currentMode;
+        if (shouldPlayTarkhim && currentMode !== 'PREP_ADZAN' && currentMode !== 'ADZAN' && currentMode !== 'IQOMAH' && currentMode !== 'SHOLAT' && currentMode !== 'KHUTBAH') {
+            visualViewMode = 'NORMAL';
         }
 
-        function loadJadwalFromCacheOrFallback() {
-            const correctedTime = new Date(Date.now() + timeOffset);
+        setActiveView(visualViewMode);
+
+        // --- KONTROL AUDIO TARKHIM ---
+        if (shouldPlayTarkhim && !isTarkhimStartedOnce) {
+            startTarkhim(activePrayerName);
+        } 
+        
+        if (currentMode === 'ADZAN') {
+            stopTarkhim();
+        }
+
+        // --- RENDER TAMPILAN HITUNG MUNDUR & MODE LAINNYA ---
+        if (visualViewMode === 'PREP_ADZAN') {
+            const elLabel = document.getElementById('labelPrepAdzan');
+            const elCount = document.getElementById('countdownPrepAdzan');
+            if (elLabel) elLabel.innerText = activePrayerName;
+            if (elCount) {
+                const m = String(Math.floor(prepCountdownValue / 60)).padStart(2, '0');
+                const s = String(prepCountdownValue % 60).padStart(2, '0');
+                elCount.innerText = `${m}:${s}`;
+            }
+        } else if (currentMode === 'ADZAN') {
+            const elAdzan = document.getElementById('labelAdzan');
+            if (elAdzan) elAdzan.innerText = activePrayerName;
+        } else if (currentMode === 'IQOMAH') {
+            const elIqomahLabel = document.getElementById('labelIqomah');
+            const elIqomahCount = document.getElementById('countdownIqomah');
+            if (elIqomahLabel) elIqomahLabel.innerText = activePrayerName;
+            if (elIqomahCount) {
+                const m = String(Math.floor(countdownValue / 60)).padStart(2, '0');
+                const s = String(countdownValue % 60).padStart(2, '0');
+                const newText = `${m}:${s}`;
+
+                if (countdownValue <= 10 && countdownValue > 0 && elIqomahCount.innerText !== newText) {
+                    playBeep(countdownValue === 1); 
+                }
+
+                elIqomahCount.innerText = newText;
+            }
+        }
+    }
+
+    async function fetchJadwalSholat(cityName, correctedTime = new Date()) {
+        try {
             const dd = String(correctedTime.getDate()).padStart(2, '0');
             const mm = String(correctedTime.getMonth() + 1).padStart(2, '0');
             const yyyy = correctedTime.getFullYear();
             const dateStr = `${dd}-${mm}-${yyyy}`;
+            const isJumat = (correctedTime.getDay() === 5);
 
-            const cachedJadwalData = localStorage.getItem('mosque_jadwal_' + dateStr);
-            if (cachedJadwalData) {
-                const parsed = JSON.parse(cachedJadwalData);
-                jadwalHariIni = parsed.jadwal;
-                document.getElementById('tanggalHijriyah').innerText = parsed.hijriyah + " (OFFLINE)";
+            const response = await fetch(`https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(cityName)}&country=Indonesia&method=11`);
+            const data = await response.json();
+
+            if (data && data.code === 200) {
+                const timings = data.data.timings;
+                const hijri = data.data.date.hijri;
+                document.getElementById('tanggalHijriyah').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
+                
+                jadwalHariIni = {
+                    'Imsak': timings.Imsak,
+                    'Subuh': timings.Fajr,
+                    'Terbit': timings.Sunrise,
+                    [isJumat ? "JUM'AT" : "Dzuhur"]: timings.Dhuhr,
+                    'Ashar': timings.Asr,
+                    'Maghrib': timings.Maghrib,
+                    'Isya': timings.Isha
+                };
+
+                localStorage.setItem('mosque_jadwal_' + dateStr, JSON.stringify({
+                    jadwal: jadwalHariIni,
+                    hijriyah: document.getElementById('tanggalHijriyah').innerText
+                }));
+
                 renderJadwalCards();
             }
+        } catch (error) {
+            loadJadwalFromCacheOrFallback();
         }
+    }
 
-        function renderJadwalCards() {
-            if (Object.keys(jadwalHariIni).length === 0) return;
+    function loadJadwalFromCacheOrFallback() {
+        const correctedTime = new Date(Date.now() + timeOffset);
+        const dd = String(correctedTime.getDate()).padStart(2, '0');
+        const mm = String(correctedTime.getMonth() + 1).padStart(2, '0');
+        const yyyy = correctedTime.getFullYear();
+        const dateStr = `${dd}-${mm}-${yyyy}`;
 
-            const now = getCorrectedTime();
-            const timeNowSec = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-
-            let nextPrayerFound = '';
-            const entries = Object.entries(jadwalHariIni);
-
-            for (let i = 0; i < entries.length; i++) {
-                const [nama, waktu] = entries[i];
-                if (nama === 'Imsak' || nama === 'Terbit') continue;
-
-                const [pHour, pMin] = waktu.split(':').map(Number);
-                const prayerTimeSec = (pHour * 3600) + (pMin * 60);
-
-                if (timeNowSec < prayerTimeSec) {
-                    nextPrayerFound = nama;
-                    break;
-                }
-            }
-            if (!nextPrayerFound) nextPrayerFound = 'Subuh';
-
-            let html = '';
-            for (const [nama, waktu] of entries) {
-                const isNext = (nama === nextPrayerFound);
-                const cardStyle = isNext 
-                    ? 'prayer-card-highlight text-white rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center shadow-2xl relative overflow-hidden' 
-                    : 'prayer-card text-slate-800 rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center';
-                
-                const textSubColor = isNext ? 'text-amber-100 font-black' : 'text-emerald-700 font-extrabold';
-                const textTimeColor = isNext ? 'text-white' : 'text-emerald-950';
-
-                html += `
-                    <div class="${cardStyle} transition-all duration-300">
-                        ${isNext ? '<div class="absolute top-0 left-0 right-0 bg-yellow-400 text-slate-950 text-xl font-black py-3 uppercase tracking-widest shadow-md">AKAN DATANG</div>' : ''}
-                        <p class="text-2xl md:text-3xl ${textSubColor} uppercase tracking-[0.2em] ${isNext ? 'mt-3' : ''} mb-3">${nama}</p>
-                        <h3 class="text-5xl md:text-7xl font-black ${textTimeColor} tracking-tight drop-shadow-sm">${waktu}</h3>
-                    </div>
-                `;
-            }
-            document.getElementById('jadwalContainer').innerHTML = html;
+        const cachedJadwalData = localStorage.getItem('mosque_jadwal_' + dateStr);
+        if (cachedJadwalData) {
+            const parsed = JSON.parse(cachedJadwalData);
+            jadwalHariIni = parsed.jadwal;
+            document.getElementById('tanggalHijriyah').innerText = parsed.hijriyah + " (OFFLINE)";
+            renderJadwalCards();
         }
+    }
 
-        async function syncDisplaySettings() {
-            try {
-                const res = await fetch('/api/display-settings');
-                if (!res.ok) throw new Error("Gagal");
-                const data = await res.json();
-                
-                configDisplay = { ...data, timezone: data.timezone || configDisplay.timezone };
-                localStorage.setItem('mosque_config_cache', JSON.stringify(configDisplay));
+    function renderJadwalCards() {
+        if (Object.keys(jadwalHariIni).length === 0) return;
 
-                if (data.mosque_name) {
-                    const elNama = document.getElementById('labelNamaMasjid');
-                    if (elNama) elNama.innerText = data.mosque_name;
-                }
+        const now = getCorrectedTime();
+        const timeNowSec = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
 
-                if (data.tarkhim_playlist && data.tarkhim_playlist.length > 0) {
-                    cacheTarkhimAudio(data.tarkhim_playlist);
-                }
+        let nextPrayerFound = '';
+        const entries = Object.entries(jadwalHariIni);
 
-                if (data.server_time) {
-                    timeOffset = data.server_time - Date.now();
-                    localStorage.setItem('mosque_time_offset', timeOffset);
-                }
+        for (let i = 0; i < entries.length; i++) {
+            const [nama, waktu] = entries[i];
+            if (nama === 'Imsak' || nama === 'Terbit') continue;
 
-                document.getElementById('labelKotaHeader').innerText = `KOTA ${data.city} & SEKITARNYA`;
+            const [pHour, pMin] = waktu.split(':').map(Number);
+            const prayerTimeSec = (pHour * 3600) + (pMin * 60);
 
-                let rawText = data.running_text || "Selamat datang di Masjid";
-                runningTextArray = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
-                if (runningTextArray.length === 0) runningTextArray = ["Selamat datang di Masjid"];
-
-                const correctedNow = new Date(Date.now() + timeOffset);
-                if (lastFetchedCity !== data.city) {
-                    lastFetchedCity = data.city;
-                    fetchJadwalSholat(data.city, correctedNow);
-                } else {
-                    renderJadwalCards();
-                }
-            } catch (e) {
-                const cachedConfig = localStorage.getItem('mosque_config_cache');
-                const cachedOffset = localStorage.getItem('mosque_time_offset');
-                if (cachedConfig) configDisplay = JSON.parse(cachedConfig);
-                if (cachedOffset) timeOffset = parseInt(cachedOffset);
-                loadJadwalFromCacheOrFallback();
+            if (timeNowSec < prayerTimeSec) {
+                nextPrayerFound = nama;
+                break;
             }
         }
+        if (!nextPrayerFound) nextPrayerFound = 'Subuh';
 
-        function initStaticRunningText() {
-            const el = document.getElementById('staticRunningText');
-            if (!el) return;
-            setInterval(() => {
-                if (runningTextArray.length > 0) {
-                    currentTextIndex = (currentTextIndex + 1) % runningTextArray.length;
-                    el.style.opacity = 0;
-                    setTimeout(() => {
-                        el.innerHTML = `<span class="text-amber-400 mr-2">🕌</span> ${runningTextArray[currentTextIndex]}`;
-                        el.style.opacity = 1;
-                    }, 300);
-                }
-            }, 6000);
-        }
-
-        function tick() {
-            const correctedTime = getCorrectedTime();
-            const jam = String(correctedTime.getHours()).padStart(2, '0');
-            const menit = String(correctedTime.getMinutes()).padStart(2, '0');
+        let html = '';
+        for (const [nama, waktu] of entries) {
+            const isNext = (nama === nextPrayerFound);
+            const cardStyle = isNext 
+                ? 'prayer-card-highlight text-white rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center shadow-2xl relative overflow-hidden' 
+                : 'prayer-card text-slate-800 rounded-3xl py-10 md:py-12 px-2 text-center flex flex-col justify-center items-center';
             
-            document.getElementById('jamMenitDigital').innerHTML = `${jam}:${menit}`;
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('tanggalMasehi').innerText = correctedTime.toLocaleDateString('id-ID', options);
+            const textSubColor = isNext ? 'text-amber-100 font-black' : 'text-emerald-700 font-extrabold';
+            const textTimeColor = isNext ? 'text-white' : 'text-emerald-950';
 
-            if (Object.keys(jadwalHariIni).length > 0) {
-                evaluatePrayerState(correctedTime);
+            html += `
+                <div class="${cardStyle} transition-all duration-300">
+                    ${isNext ? '<div class="absolute top-0 left-0 right-0 bg-yellow-400 text-slate-950 text-xl font-black py-3 uppercase tracking-widest shadow-md">AKAN DATANG</div>' : ''}
+                    <p class="text-2xl md:text-3xl ${textSubColor} uppercase tracking-[0.2em] ${isNext ? 'mt-3' : ''} mb-3">${nama}</p>
+                    <h3 class="text-5xl md:text-7xl font-black ${textTimeColor} tracking-tight drop-shadow-sm">${waktu}</h3>
+                </div>
+            `;
+        }
+        document.getElementById('jadwalContainer').innerHTML = html;
+    }
+
+    async function syncDisplaySettings() {
+        try {
+            // Tambahkan timestamp (?t=) agar browser tidak mengambil data dari cache lama
+            const res = await fetch('/api/display-settings?t=' + new Date().getTime());
+            if (!res.ok) throw new Error("Gagal");
+            const data = await res.json();
+            
+            configDisplay = { ...data, timezone: data.timezone || configDisplay.timezone };
+            localStorage.setItem('mosque_config_cache', JSON.stringify(configDisplay));
+
+            // PERBARUI NAMA MASJID SECARA REAL-TIME DARI API
+            if (data.mosque_name) {
+                const elNama = document.getElementById('labelNamaMasjid');
+                if (elNama) elNama.innerText = data.mosque_name;
+            }
+
+            // PERBARUI KOTA SECARA REAL-TIME
+            if (data.city) {
+                const elKota = document.getElementById('labelKotaHeader');
+                if (elKota) elKota.innerText = `KOTA ${data.city} & SEKITARNYA`;
+            }
+
+            if (data.tarkhim_playlist && data.tarkhim_playlist.length > 0) {
+                cacheTarkhimAudio(data.tarkhim_playlist);
+                calculateTotalPlaylistDuration(data.tarkhim_playlist);
+            }
+
+            if (data.server_time) {
+                timeOffset = data.server_time - Date.now();
+                localStorage.setItem('mosque_time_offset', timeOffset);
+            }
+
+            let rawText = data.running_text || "Selamat datang di Masjid";
+            runningTextArray = rawText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+            if (runningTextArray.length === 0) runningTextArray = ["Selamat datang di Masjid"];
+
+            const correctedNow = new Date(Date.now() + timeOffset);
+            if (lastFetchedCity !== data.city) {
+                lastFetchedCity = data.city;
+                fetchJadwalSholat(data.city, correctedNow);
+            } else {
                 renderJadwalCards();
             }
+        } catch (e) {
+            const cachedConfig = localStorage.getItem('mosque_config_cache');
+            const cachedOffset = localStorage.getItem('mosque_time_offset');
+            if (cachedConfig) configDisplay = JSON.parse(cachedConfig);
+            if (cachedOffset) timeOffset = parseInt(cachedOffset);
+            loadJadwalFromCacheOrFallback();
         }
+    }
 
-        async function cacheTarkhimAudio(playlist) {
-            try {
-                for (const url of playlist) {
-                    if (!sessionStorage.getItem('cached_' + url)) {
-                        const audio = new Audio();
-                        audio.src = url;
-                        audio.preload = 'auto';
-                        sessionStorage.setItem('cached_' + url, 'true');
-                    }
-                }
-            } catch (err) {}
-        }
-
-        function playBeep(isLongBeep = false) {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(isLongBeep ? 880 : 600, audioCtx.currentTime); 
-                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                
-                const duration = isLongBeep ? 0.7 : 0.12;
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + duration);
-            } catch (e) {
-                console.warn("Audio context tidak didukung browser:", e);
-            }
-        }
-
-        syncDisplaySettings();
-        tick();
-        initStaticRunningText();
-
-        setInterval(tick, 10000); 
-
+    function initStaticRunningText() {
+        const el = document.getElementById('staticRunningText');
+        if (!el) return;
         setInterval(() => {
-            const isPrepActive = !vPrepAdzan.classList.contains('hidden');
-            const isIqomahActive = !vIqomah.classList.contains('hidden');
-            
-            if (isPrepActive || isIqomahActive) {
-                const correctedTime = getCorrectedTime();
-                evaluatePrayerState(correctedTime);
+            if (runningTextArray.length > 0) {
+                currentTextIndex = (currentTextIndex + 1) % runningTextArray.length;
+                el.style.opacity = 0;
+                setTimeout(() => {
+                    el.innerHTML = `<span class="text-amber-400 mr-2">🕌</span> ${runningTextArray[currentTextIndex]}`;
+                    el.style.opacity = 1;
+                }, 300);
             }
-        }, 1000);
+        }, 6000);
+    }
 
-        setInterval(syncDisplaySettings, 300000);
-    </script>
-</body>
-</html>
+    function tick() {
+        const correctedTime = getCorrectedTime();
+        const jam = String(correctedTime.getHours()).padStart(2, '0');
+        const menit = String(correctedTime.getMinutes()).padStart(2, '0');
+        
+        document.getElementById('jamMenitDigital').innerHTML = `${jam}:${menit}`;
+        
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('tanggalMasehi').innerText = correctedTime.toLocaleDateString('id-ID', options);
+
+        if (Object.keys(jadwalHariIni).length > 0) {
+            evaluatePrayerState(correctedTime);
+            renderJadwalCards();
+        }
+    }
+
+    async function cacheTarkhimAudio(playlist) {
+        try {
+            for (const url of playlist) {
+                if (!sessionStorage.getItem('cached_' + url)) {
+                    const audio = new Audio();
+                    audio.src = url;
+                    audio.preload = 'auto';
+                    sessionStorage.setItem('cached_' + url, 'true');
+                }
+            }
+        } catch (err) {}
+    }
+
+    function playBeep(isLongBeep = false) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(isLongBeep ? 880 : 600, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            
+            const duration = isLongBeep ? 0.7 : 0.12;
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        } catch (e) {
+            console.warn("Audio context tidak didukung browser:", e);
+        }
+    }
+
+    syncDisplaySettings();
+    tick();
+    initStaticRunningText();
+
+    setInterval(tick, 10000); 
+
+    setInterval(() => {
+        const isPrepActive = !vPrepAdzan.classList.contains('hidden');
+        const isIqomahActive = !vIqomah.classList.contains('hidden');
+        
+        if (isPrepActive || isIqomahActive) {
+            const correctedTime = getCorrectedTime();
+            evaluatePrayerState(correctedTime);
+        }
+    }, 1000);
+
+    setInterval(syncDisplaySettings, 10000);
+</script>

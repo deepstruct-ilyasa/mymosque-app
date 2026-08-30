@@ -12,6 +12,11 @@ exports.index = (req, res) => {
         }
 
         displayDb.all("SELECT * FROM tarkhim_audio ORDER BY id DESC", [], (err, audioRows) => {
+
+            if (!audioRows || audioRows.length === 0) {
+                settings.prep_tarkhim_detik = 0;
+            }
+            
             res.render('display/admin_settings', { 
                 title: 'Pengaturan Modul Display & Tarkhim', 
                 settings: settings,
@@ -29,11 +34,12 @@ exports.updateSettings = (req, res) => {
     
     // DEBUG: Cek apa yang dikirimkan form ke backend
     console.log("DATA BODY DARI ADMIN:", body);
+    console.log("DATA FILES DARI ADMIN:", req.files); // Cek file yang masuk dari multer
 
     const keysToSave = [
         'sholat_city', 'sholat_running_text', 'timezone',
         'iqomah_subuh', 'iqomah_dzuhur', 'iqomah_ashar', 'iqomah_maghrib', 'iqomah_isya',
-        'prep_tarkhim_menit', 'prep_adzan_subuh', 'prep_adzan_dzuhur', 'prep_adzan_ashar', 'prep_adzan_maghrib', 'prep_adzan_isya',
+        'prep_tarkhim_detik', 'prep_adzan_subuh', 'prep_adzan_dzuhur', 'prep_adzan_ashar', 'prep_adzan_maghrib', 'prep_adzan_isya',
         'sholat_duration_subuh', 'sholat_duration_dzuhur', 'sholat_duration_ashar', 'sholat_duration_maghrib', 'sholat_duration_isya',
         'durasi_adzan_menit', 'durasi_khutbah_menit'
     ];
@@ -46,6 +52,27 @@ exports.updateSettings = (req, res) => {
             const val = body[key] !== undefined ? body[key] : '';
             displayDb.run(sql, [key, val]);
         });
+
+        // --- TAMBAHAN LOGIC: SIMPAN FILE AUDIO TARKHIM KE DATABASE ---
+        // Menyesuaikan apakah Anda menggunakan upload.array('tarkhim_files') atau upload.fields
+        let uploadedFiles = [];
+        if (req.files) {
+            if (Array.isArray(req.files)) {
+                uploadedFiles = req.files;
+            } else if (req.files['tarkhim_files']) {
+                uploadedFiles = req.files['tarkhim_files'];
+            }
+        }
+
+        if (uploadedFiles.length > 0) {
+            const insertAudioSql = `INSERT INTO tarkhim_audio (original_name, filename) VALUES (?, ?)`;
+            uploadedFiles.forEach(file => {
+                const originalName = file.originalname;
+                const fileName = file.filename;
+                displayDb.run(insertAudioSql, [originalName, fileName]);
+            });
+        }
+        // -----------------------------------------------------------
 
         displayDb.run("COMMIT", (err) => {
             if (err) {
@@ -66,10 +93,17 @@ exports.deleteTarkhim = (req, res) => {
                 fs.unlinkSync(filePath);
             }
             displayDb.run("DELETE FROM tarkhim_audio WHERE id = ?", [audioId], () => {
-                res.redirect('/admin/display/settings?success=deleted');
+                // KIRIM RESPON JSON KE FRONTEND (TANPA REDIRECT)
+                displayDb.all("SELECT * FROM tarkhim_audio ORDER BY id DESC", [], (err, audioRows) => {
+                    res.json({
+                        success: true,
+                        message: "File audio berhasil dihapus",
+                        tarkhimList: audioRows || []
+                    });
+                });
             });
         } else {
-            res.redirect('/admin/display/settings?error=not_found');
+            res.status(404).json({ success: false, message: "File tidak ditemukan" });
         }
     });
 };
@@ -83,16 +117,13 @@ exports.getApiSettings = (req, res) => {
         }
 
         // 2. AMBIL TIMEZONE DARI TABEL GLOBAL APP_SETTINGS UTAMA
-        // (Sesuaikan nama variabel database global settings Anda, misal settingsDb)
         settingsDb.all("SELECT * FROM app_settings", [], (err, globalRows) => {
             const globalSettings = {};
             if (!err && globalRows) {
                 globalRows.forEach(r => globalSettings[r.key] = r.value);
             }
 
-            // Ambil nilai timezone global, fallback ke Asia/Jakarta jika kosong
             const activeTimezone = globalSettings.timezone || 'Asia/Jakarta';
-
             const activeMosqueName = globalSettings.mosque_name || settings.mosque_name || 'undefined';
 
             displayDb.all("SELECT filename FROM tarkhim_audio", [], (err, audioRows) => {
@@ -105,7 +136,7 @@ exports.getApiSettings = (req, res) => {
                     running_text: settings.sholat_running_text || 'undefined',
                     durasi_adzan: parseInt(settings.durasi_adzan_menit || 3),
                     durasi_khutbah: parseInt(settings.durasi_khutbah_menit || 45),
-                    prep_tarkhim_menit: parseInt(settings.prep_tarkhim_menit || 10),
+                    prep_tarkhim_detik: parseInt(settings.prep_tarkhim_detik || 600),
                     tarkhim_playlist: tarkhimPlaylist,
                     iqomah: {
                         Subuh: parseInt(settings.iqomah_subuh || 1),
