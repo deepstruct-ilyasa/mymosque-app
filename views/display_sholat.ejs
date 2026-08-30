@@ -741,11 +741,19 @@
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
-            oscillator.type = 'sine';
+            // Gunakan tipe 'square' atau 'triangle' jika ingin suara yang lebih tajam/nyaring dibanding 'sine'
+            oscillator.type = 'triangle'; 
+            
+            // Frekuensi nada (880Hz untuk panjang, 600Hz untuk pendek)
             oscillator.frequency.setValueAtTime(isLongBeep ? 880 : 600, audioCtx.currentTime); 
-            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            
+            // PERBESAR VOLUME: Naikkan dari 0.15 ke 0.5 (atau 0.7 agar lebih keras)
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
             
             const duration = isLongBeep ? 0.7 : 0.12;
+            
+            // Pertahankan volume keras sedikit lebih lama sebelum turun ke 0.001
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (duration * 0.8));
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
 
             oscillator.connect(gainNode);
