@@ -1,28 +1,43 @@
 # 🕌 MyMosque App
 
-Aplikasi Manajemen Masjid & Zakat berbasis Node.js, Express, EJS, Tailwind CSS, dan SQLite. Dilengkapi dengan kalkulator Zakat Fitrah & Fidyah Dinamis, manajemen inventaris/pengaturan, serta sistem keamanan tingkat lanjut berbasis **RBAC (Role-Based Access Control) & Granular Permissions** yang dinamis.
+Aplikasi Manajemen Masjid & Zakat berbasis Node.js, Express, EJS, Tailwind CSS, dan SQLite. Dilengkapi dengan kalkulator Zakat Fitrah & Fidyah Dinamis, manajemen inventaris/pengaturan, sistem keamanan tingkat lanjut berbasis RBAC (Role-Based Access Control), serta **Modul Display Jadwal Sholat & Audio Tarkhim Sekuensial Berbasis Waktu Sholat** yang modern dan modular.
 
 ---
 
 ## 🚀 Fitur Utama & Modul Sistem
 
-1. **Modul Manajemen Keuangan & Kas Masjid (`finance.db`)**
-   - **Pencatatan Transaksi:** Pengelolaan kas masuk dan kas keluar lengkap dengan lampiran file bukti transaksi.
-   - **Sistem Tutup Buku & Snapshot Arsip (`monthly_closings`):** Mengunci laporan keuangan bulanan secara permanen untuk menjaga integritas historis data. Sistem secara otomatis menyalin dan mengamankan logo lembaga khusus untuk periode tersebut.
-   - **Pusat Arsip & Laporan (Report Center):** Navigasi berbasis kartu interaktif untuk melihat kembali, mencetak, atau mengedit data arsip laporan bulan-bulan sebelumnya secara independen tanpa saling mempengaruhi.
-   - **Cetak Laporan PDF A4 Profesional:** Tata letak dokumen resmi lengkap dengan Kop Surat dinamis dan tanda tangan ganda (Ketua & Bendahara/Sekretaris) beserta opsi input jabatan *Custom*.
+### 1. 🖥️ Modul Display Sholat & Audio Tarkhim Modular (`display.db`)
+* **Pengaturan Universal Berbasis Per Waktu Sholat:** Memisahkan konfigurasi secara granular untuk 6 waktu sholat: **Shubuh, Dzuhur, Jum'at, Ashar, Maghrib, dan Isya**. Masing-masing waktu memiliki parameter mandiri:
+  * Hitung mundur persiapan adzan (*prep adzan* dalam detik).
+  * Durasi hitung mundur iqomah (dalam menit).
+  * Durasi mode sholat berlangsung (dalam menit).
+  * Durasi mulai pemutaran audio tarkhim otomatis (*prep tarkhim* dalam detik).
+* **Pemisahan Dzuhur & Jum'at:** Hari Jumat memiliki entitas dan pengaturan waktu, durasi khutbah, serta playlist audionya sendiri secara terpisah dari hari biasa.
+* **Toggle ON/OFF Tarkhim per Sholat:** Fitur sakelar fleksibel di panel admin untuk menghidupkan atau mematikan pemutaran audio tarkhim di waktu sholat tertentu secara instan.
+* **Manajemen Audio Tarkhim Terisolasi & Kalkulator Durasi Otomatis:** 
+  * Unggah file audio (MP3/WAV) secara spesifik untuk masing-masing waktu sholat.
+  * Sistem secara otomatis membaca metadata file audio saat diunggah dan mengakumulasikan total durasi detik tarkhim secara *real-time*.
+  * Fitur hapus audio via AJAX instan tanpa *refresh* halaman, yang langsung mengalkulasi ulang durasi detik di database.
+* **Pemutar Audio Sekuensial di TV Display:** Pemutaran file audio tarkhim berurutan secara otomatis berdasarkan antrean playlist spesifik per sholat.
+* **Running Text & Jadwal Kemenag Real-Time:** Integrasi otomatis jadwal sholat harian berdasarkan kota/wilayah serta teks pengumuman berjalan (*running text*) dinamis.
 
-2. **Modul Zakat & Fidyah Otomatis (`zakat_db`)**
-   - **Wizard Setup Agenda Baru:** Pengaturan standar besaran Zakat Fitrah (beras/uang), Fidyah, dan Nisab Zakat Mal yang disesuaikan per periode/tahun hijriyah.
-   - **Kalkulator Kombinasi Akurat:** Perhitungan otomatis jumlah jiwa, konversi beras, uang tunai, hingga kelebihan pembayaran yang otomatis dikalkulasikan sebagai Infaq/Sedekah.
-   - **Cetak Rekapitulasi Zakat A4:** Format laporan multi-halaman berstandar cetak profesional dengan pembagian ringkasan eksekutif dan rincian per kategori muzakki.
+### 2. 💰 Modul Manajemen Keuangan & Kas Masjid (`finance.db`)
+* **Pencatatan Transaksi:** Pengelolaan kas masuk dan kas keluar lengkap dengan lampiran file bukti transaksi.
+* **Sistem Tutup Buku & Snapshot Arsip (`monthly_closings`):** Mengunci laporan keuangan bulanan secara permanen untuk menjaga integritas historis data, lengkap dengan pengamanan logo lembaga khusus periode tersebut.
+* **Pusat Arsip & Laporan (Report Center):** Navigasi kartu interaktif untuk melihat, mencetak, atau mengedit data arsip laporan bulan-bulan sebelumnya secara independen.
+* **Cetak Laporan PDF A4 Profesional:** Tata letak dokumen resmi dengan kop surat dinamis, tanda tangan ganda (Ketua & Bendahara/Sekretaris), serta opsi input jabatan custom.
 
-3. **Modul Pengaturan Sistem & Identitas (`app_settings.db`)**
-   - **Identitas Terpusat:** Pengaturan nama masjid, alamat lengkap, nomor telepon/kontak, zona waktu, dan logo utama aplikasi yang otomatis menjadi nilai *default* cerdas bagi modul keuangan dan zakat.
+### 3. 🌾 Modul Zakat & Fidyah Otomatis (`zakat_db`)
+* **Wizard Setup Agenda Baru:** Pengaturan standar besaran Zakat Fitrah (beras/uang), Fidyah, dan Nisab Zakat Mal per periode/tahun Hijriyah.
+* **Kalkulator Kombinasi Akurat:** Perhitungan otomatis jumlah jiwa, konversi beras, uang tunai, hingga kelebihan pembayaran yang otomatis dikalkulasikan sebagai Infaq/Sedekah.
+* **Cetak Rekapitulasi Zakat A4:** Format laporan multi-halaman berstandar cetak profesional dengan pembagian ringkasan eksekutif dan rincian per kategori muzakki.
 
-4. **Keamanan & Kontrol Akses Enterprise**
-   - **Dynamic RBAC & Granular Permissions:** Pengaturan hak akses modul per pengguna secara fleksibel.
-   - **Enkripsi Keamanan:** Perlindungan sandi menggunakan `bcrypt` dan manajemen sesi berbasis server.
+### 4. ⚙️ Modul Pengaturan Sistem & Identitas (`app_settings.db`)
+* **Identitas Terpusat:** Pengaturan nama masjid, alamat lengkap, kontak, zona waktu, dan logo utama aplikasi yang otomatis menjadi nilai *default* cerdas bagi seluruh modul.
+
+### 5. 🔒 Keamanan & Kontrol Akses Enterprise
+* **Dynamic RBAC & Granular Permissions:** Pengaturan hak akses modul per pengguna secara fleksibel.
+* **Enkripsi Keamanan:** Perlindungan sandi menggunakan `bcrypt` dan manajemen sesi berbasis server.
 
 ---
 
@@ -40,7 +55,7 @@ Buka terminal server Anda, lalu jalankan perintah berikut secara berurutan:
 
 ```bash
 # 1. Download kode dari GitHub
-git clone [https://github.com/deepstruct-ilyasa/mymosque-app.git](https://github.com/deepstruct-ilyasa/mymosque-app.git)
+git clone https://github.com/deepstruct-ilyasa/mymosque-app.git
 
 # 2. Masuk ke dalam folder project
 cd mymosque-app
@@ -103,4 +118,4 @@ Agar aplikasi tetap berjalan stabil, otomatis menyala saat server reboot, dan hi
   - Username: **admin**
   - Password: **admin123**
 
-  ⚠️ Saran Keamanan: Segera login ke panel admin, lalu buat akun baru atau ubah pengaturan demi keamanan operasional Anda.
+  ⚠️ Saran Keamanan: Segera login ke panel admin, lalu buat akun baru atau ubah password demi keamanan operasional Anda.
