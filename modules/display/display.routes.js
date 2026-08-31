@@ -21,9 +21,17 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+const uploadFields = upload.fields([
+    { name: 'tarkhim_files_1', maxCount: 10 },
+    { name: 'tarkhim_files_2', maxCount: 10 },
+    { name: 'tarkhim_files_3', maxCount: 10 },
+    { name: 'tarkhim_files_4', maxCount: 10 },
+    { name: 'tarkhim_files_5', maxCount: 10 },
+    { name: 'tarkhim_files_6', maxCount: 10 }
+]);
+
 router.get('/settings', displayController.index);
-// Gabungkan upload file ke dalam rute update settings utama
-router.post('/settings/update', upload.array('tarkhim_files', 10), displayController.updateSettings);
+router.post('/settings/update', uploadFields, displayController.updateSettings);
 router.get('/tarkhim/delete/:id', displayController.deleteTarkhim);
 
 module.exports = router;

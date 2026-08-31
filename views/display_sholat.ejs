@@ -234,11 +234,12 @@
         running_text: "Selamat datang di Masjid",
         durasi_adzan: 3,
         durasi_khutbah: 45,
-        prep_tarkhim_detik: 600,
+        prep_tarkhim_detik: { "Shubuh": 0, "Dzuhur": 0, "Jum'at": 0, "Ashar": 0, "Maghrib": 0, "Isya": 0 },
+        tarkhim_active: { "Shubuh": 1, "Dzuhur": 1, "Jum'at": 1, "Ashar": 1, "Maghrib": 1, "Isya": 1 },
         tarkhim_playlist: [],
-        iqomah: { Subuh: 1, Dzuhur: 1, Ashar: 1, Maghrib: 1, Isya: 1 },
-        prep_adzan: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 },
-        sholat_duration: { Subuh: 10, Dzuhur: 10, Ashar: 10, Maghrib: 10, Isya: 10 }
+        iqomah: { "Shubuh": 10, "Dzuhur": 10, "Jum'at": 10, "Ashar": 10, "Maghrib": 10, "Isya": 10 },
+        prep_adzan: { "Shubuh": 60, "Dzuhur": 60, "Jum'at": 60, "Ashar": 60, "Maghrib": 60, "Isya": 60 },
+        sholat_duration: { "Shubuh": 15, "Dzuhur": 15, "Jum'at": 45, "Ashar": 15, "Maghrib": 10, "Isya": 15 }
     };
 
     let jadwalHariIni = {};
@@ -252,14 +253,8 @@
     let isTarkhimStartedOnce = false;
     let activeSimulationMode = null;
 
-    // Variabel tambahan untuk pemutaran sekuensial & durasi akumulasi lokal TV
     let currentPlaylistIndex = 0;
-    let totalPlaylistDuration = 600; // Default cadangan (10 menit dalam detik)
-
-    const DURASI = {
-        ADZAN: 1 * 60,
-        KHUTBAH: 20 * 60
-    };
+    let totalPlaylistDuration = 600;
 
     const vNormal = document.getElementById('view-normal');
     const vPrepAdzan = document.getElementById('view-prep-adzan');
@@ -290,7 +285,6 @@
         }
     }
 
-    // --- FUNGSI PENGHITUNG AKUMULASI DURASI PLAYLIST (KHUSUS TV VIEW) ---
     function getAudioDuration(url) {
         return new Promise((resolve) => {
             const audio = new Audio();
@@ -299,16 +293,16 @@
                 resolve(audio.duration);
             };
             audio.onerror = function() {
-                resolve(300); // Fallback 5 menit jika file gagal dimuat
+                resolve(300);
             };
         });
     }
 
     async function calculateTotalPlaylistDuration(playlist) {
         let totalSeconds = 0;
-        for (const url of playlist) {
+        for (const item of playlist) {
             try {
-                const duration = await getAudioDuration(url);
+                const duration = await getAudioDuration(item.url);
                 totalSeconds += duration;
             } catch (e) {
                 totalSeconds += 300;
@@ -322,7 +316,7 @@
         }
     }
 
-    // --- FUNGSI PEMUTAR TARKHIM SEKUENSIAL (BERURUTAN) ---
+    // --- PEMUTAR TARKHIM BERDASARKAN ID SHOLAT ---
     function startTarkhim(prayerName = "") {
         const player = document.getElementById('tarkhimPlayer');
         if (!player) return;
@@ -331,21 +325,33 @@
             return; 
         }
 
-        if (configDisplay.tarkhim_playlist && configDisplay.tarkhim_playlist.length > 0) {
+        let targetIdSholat = 1;
+        if (prayerName === 'Dzuhur') targetIdSholat = 2;
+        else if (prayerName === "Jum'at") targetIdSholat = 3;
+        else if (prayerName === 'Ashar') targetIdSholat = 4;
+        else if (prayerName === 'Maghrib') targetIdSholat = 5;
+        else if (prayerName === 'Isya') targetIdSholat = 6;
+
+        const specificPlaylist = configDisplay.tarkhim_playlist
+            .filter(item => item.id_sholat === targetIdSholat)
+            .map(item => item.url);
+
+        if (specificPlaylist && specificPlaylist.length > 0) {
             lastPlayedPrayerName = prayerName;
-            currentPlaylistIndex = 0; // Mulai dari file pertama
-            
+            currentPlaylistIndex = 0;
+            window.activePlaylist = specificPlaylist;
             playNextTarkhimFile(player, prayerName);
         } else {
-            console.warn("Playlist tarkhim kosong!");
+            console.warn(`Playlist tarkhim untuk ${prayerName} kosong!`);
         }
     }
 
     function playNextTarkhimFile(player, prayerName) {
-        if (configDisplay.tarkhim_playlist && currentPlaylistIndex < configDisplay.tarkhim_playlist.length) {
-            currentTarkhimFile = configDisplay.tarkhim_playlist[currentPlaylistIndex];
+        const playlist = window.activePlaylist || [];
+        if (playlist.length > 0 && currentPlaylistIndex < playlist.length) {
+            currentTarkhimFile = playlist[currentPlaylistIndex];
             player.src = currentTarkhimFile;
-            player.loop = false; // Nonaktifkan loop tunggal karena urutan playlist
+            player.loop = false;
 
             player.play().then(() => {
                 isTarkhimPlaying = true;
@@ -355,7 +361,6 @@
                 console.warn("Autoplay dicegah browser:", e);
             });
 
-            // Begitu file habis, otomatis lanjut ke file berikutnya secara sekuensial!
             player.onended = function() {
                 currentPlaylistIndex++;
                 playNextTarkhimFile(player, prayerName);
@@ -438,10 +443,6 @@
 
         let durasiAdzanSec = (configDisplay.durasi_adzan || 3) * 60;
         let durasiKhutbahSec = (configDisplay.durasi_khutbah || 45) * 60;
-        
-        // Waktu mulai tarkhim berpedoman penuh pada data database (prep_tarkhim_menit dikonversi ke detik)
-        let tarkhimDetikConfig = parseInt(configDisplay.prep_tarkhim_detik || configDisplay.prep_tarkhim_menit);
-        let tarkhimSecsBefore = isNaN(tarkhimDetikConfig) ? 600 : tarkhimDetikConfig;
 
         for (const [nama, waktu] of Object.entries(jadwalHariIni)) {
             if (nama === 'Imsak' || nama === 'Terbit') continue;
@@ -450,15 +451,18 @@
             const prayerTimeSec = (pHour * 3600) + (pMin * 60);
             const diff = timeNowSec - prayerTimeSec; 
 
-            let keyName = nama === "JUM'AT" ? "Dzuhur" : nama;
+            let keyName = nama; 
             let prepSecs = (configDisplay.prep_adzan && configDisplay.prep_adzan[keyName]) ? configDisplay.prep_adzan[keyName] : 60;
             let durasiIqomahMnit = (configDisplay.iqomah && configDisplay.iqomah[keyName]) ? configDisplay.iqomah[keyName] : 10;
             let durasiIqomahSec = durasiIqomahMnit * 60;
             let sholatMnit = (configDisplay.sholat_duration && configDisplay.sholat_duration[keyName]) ? configDisplay.sholat_duration[keyName] : 15;
             let sholatSecs = sholatMnit * 60;
 
-            // --- 1. ATURAN AUDIO TARKHIM ---
-            if (!isJumat && diff < 0 && Math.abs(diff) <= tarkhimSecsBefore) {
+            let tarkhimActiveStatus = (configDisplay.tarkhim_active && configDisplay.tarkhim_active[keyName] !== undefined) ? configDisplay.tarkhim_active[keyName] : 1;
+            let tarkhimDetikConfig = (configDisplay.prep_tarkhim_detik && configDisplay.prep_tarkhim_detik[keyName]) ? configDisplay.prep_tarkhim_detik[keyName] : 0;
+
+            // --- 1. ATURAN AUDIO TARKHIM (Mengecek Toggle ON/OFF & Detik Spesifik) ---
+            if (tarkhimActiveStatus === 1 && tarkhimDetikConfig > 0 && diff < 0 && Math.abs(diff) <= tarkhimDetikConfig) {
                 shouldPlayTarkhim = true;
                 activePrayerName = nama;
             }
@@ -501,7 +505,6 @@
 
         setActiveView(visualViewMode);
 
-        // --- KONTROL AUDIO TARKHIM ---
         if (shouldPlayTarkhim && !isTarkhimStartedOnce) {
             startTarkhim(activePrayerName);
         } 
@@ -510,7 +513,6 @@
             stopTarkhim();
         }
 
-        // --- RENDER TAMPILAN HITUNG MUNDUR & MODE LAINNYA ---
         if (visualViewMode === 'PREP_ADZAN') {
             const elLabel = document.getElementById('labelPrepAdzan');
             const elCount = document.getElementById('countdownPrepAdzan');
@@ -559,7 +561,7 @@
                 
                 jadwalHariIni = {
                     'Imsak': timings.Imsak,
-                    'Subuh': timings.Fajr,
+                    'Shubuh': timings.Fajr,
                     'Terbit': timings.Sunrise,
                     [isJumat ? "JUM'AT" : "Dzuhur"]: timings.Dhuhr,
                     'Ashar': timings.Asr,
@@ -616,7 +618,7 @@
                 break;
             }
         }
-        if (!nextPrayerFound) nextPrayerFound = 'Subuh';
+        if (!nextPrayerFound) nextPrayerFound = 'Shubuh';
 
         let html = '';
         for (const [nama, waktu] of entries) {
@@ -641,7 +643,6 @@
 
     async function syncDisplaySettings() {
         try {
-            // Tambahkan timestamp (?t=) agar browser tidak mengambil data dari cache lama
             const res = await fetch('/api/display-settings?t=' + new Date().getTime());
             if (!res.ok) throw new Error("Gagal");
             const data = await res.json();
@@ -649,13 +650,11 @@
             configDisplay = { ...data, timezone: data.timezone || configDisplay.timezone };
             localStorage.setItem('mosque_config_cache', JSON.stringify(configDisplay));
 
-            // PERBARUI NAMA MASJID SECARA REAL-TIME DARI API
             if (data.mosque_name) {
                 const elNama = document.getElementById('labelNamaMasjid');
                 if (elNama) elNama.innerText = data.mosque_name;
             }
 
-            // PERBARUI KOTA SECARA REAL-TIME
             if (data.city) {
                 const elKota = document.getElementById('labelKotaHeader');
                 if (elKota) elKota.innerText = `KOTA ${data.city} & SEKITARNYA`;
@@ -724,12 +723,12 @@
 
     async function cacheTarkhimAudio(playlist) {
         try {
-            for (const url of playlist) {
-                if (!sessionStorage.getItem('cached_' + url)) {
+            for (const item of playlist) {
+                if (!sessionStorage.getItem('cached_' + item.url)) {
                     const audio = new Audio();
-                    audio.src = url;
+                    audio.src = item.url;
                     audio.preload = 'auto';
-                    sessionStorage.setItem('cached_' + url, 'true');
+                    sessionStorage.setItem('cached_' + item.url, 'true');
                 }
             }
         } catch (err) {}
@@ -741,18 +740,12 @@
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
-            // Gunakan tipe 'square' atau 'triangle' jika ingin suara yang lebih tajam/nyaring dibanding 'sine'
             oscillator.type = 'triangle'; 
-            
-            // Frekuensi nada (880Hz untuk panjang, 600Hz untuk pendek)
             oscillator.frequency.setValueAtTime(isLongBeep ? 880 : 600, audioCtx.currentTime); 
-            
-            // PERBESAR VOLUME: Naikkan dari 0.15 ke 0.5 (atau 0.7 agar lebih keras)
             gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
             
             const duration = isLongBeep ? 0.7 : 0.12;
             
-            // Pertahankan volume keras sedikit lebih lama sebelum turun ke 0.001
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (duration * 0.8));
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
 
@@ -784,3 +777,5 @@
 
     setInterval(syncDisplaySettings, 10000);
 </script>
+</body>
+</html>
