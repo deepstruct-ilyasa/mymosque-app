@@ -34,4 +34,21 @@ router.get('/settings', displayController.index);
 router.post('/settings/update', uploadFields, displayController.updateSettings);
 router.get('/tarkhim/delete/:id', displayController.deleteTarkhim);
 
+router.get('/zakat', (req, res) => {
+    settingsDb.all("SELECT * FROM app_settings", [], (err, rows) => {
+        const appSettings = {};
+        if (!err && rows) rows.forEach(r => appSettings[r.key] = r.value);
+        res.render('display/display_zakat', { title: 'Display Zakat Masjid', appSettings });
+    });
+});
+
+router.get('/api/display-zakat', (req, res) => {
+
+    res.json({
+        total_jiwa: 245,
+        total_beras: 612.5,
+        total_uang: 12500000
+    });
+});
+
 module.exports = router;

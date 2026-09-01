@@ -112,6 +112,9 @@ app.get('/display-sholat', (req, res) => {
     res.render('display/display_sholat', { title: 'Display Sholat Masjid' });
 });
 
+app.get('/display-zakat', displayController.renderDisplayZakat);
+app.get('/api/display-zakat-data', displayController.getApiZakatData);
+
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);
 app.use('/admin/settings', requireAuth, checkPermission('settings'), settingsRoutes);
 app.use('/admin/users', requireAuth, userRoutes);

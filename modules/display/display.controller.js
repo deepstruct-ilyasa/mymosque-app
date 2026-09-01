@@ -1,6 +1,7 @@
 // modules/display/display.controller.js
 const displayDb = require('../../config/display_db');
 const settingsDb = require('../../config/settings_db');
+const zakatDb = require('../../config/zakat_db');
 const path = require('path');
 const fs = require('fs');
 
@@ -173,6 +174,70 @@ exports.getApiSettings = (req, res) => {
                         server_time: Date.now()
                     });
                 });
+            });
+        });
+    });
+};
+
+
+
+
+
+
+// Render Halaman Display Zakat (Publik)
+exports.renderDisplayZakat = (req, res) => {
+    settingsDb.all("SELECT * FROM app_settings", [], (err, rows) => {
+        const appSettings = {};
+        if (!err && rows) rows.forEach(r => appSettings[r.key] = r.value);
+        res.render('display/display_zakat', { title: 'Display Zakat Masjid', appSettings });
+    });
+};
+
+// API JSON Real-Time untuk Zakat
+exports.getApiZakatData = (req, res) => {
+    const requestedEventId = req.query.event_id;
+
+    zakatDb.all("SELECT * FROM event ORDER BY id DESC", [], (err, semuaEvent) => {
+        if (err || !semuaEvent || semuaEvent.length === 0) {
+            return res.json({ error: "Belum ada event" });
+        }
+
+        let eventPilihan = null;
+        if (requestedEventId) {
+            eventPilihan = semuaEvent.find(e => e.id == requestedEventId);
+        }
+        
+        // Jika tidak ada parameter atau event tidak ditemukan, pilih yang Aktif, atau fallback ke event pertama (terbaru)
+        if (!eventPilihan) {
+            eventPilihan = semuaEvent.find(e => e.status === 'Aktif') || semuaEvent[0];
+        }
+
+        zakatDb.all("SELECT * FROM transactions WHERE event_id = ? ORDER BY id DESC", [eventPilihan.id], (err, transaksi) => {
+            if (err) transaksi = [];
+
+            const jenisKategori = ['Zakat Fitrah', 'Zakat Mal', 'Infaq / Sedekah', 'Fidyah'];
+            let rekapPerJenis = {};
+            jenisKategori.forEach(kat => {
+                rekapPerJenis[kat] = { jiwa: 0, beras: 0, infaqBeras: 0, uang: 0, infaqUang: 0 };
+            });
+
+            transaksi.forEach(t => {
+                let jenis = t.jenis_zakat;
+                if (!rekapPerJenis[jenis]) {
+                    rekapPerJenis[jenis] = { jiwa: 0, beras: 0, infaqBeras: 0, uang: 0, infaqUang: 0 };
+                }
+                rekapPerJenis[jenis].jiwa += t.jumlah_jiwa;
+                rekapPerJenis[jenis].beras = parseFloat((rekapPerJenis[jenis].beras + t.jumlah_beras).toFixed(3));
+                rekapPerJenis[jenis].infaqBeras = parseFloat((rekapPerJenis[jenis].infaqBeras + t.infaq_beras).toFixed(3));
+                rekapPerJenis[jenis].uang += t.jumlah_uang;
+                rekapPerJenis[jenis].infaqUang += t.infaq_uang;
+            });
+
+            res.json({
+                semuaEvent,
+                eventPilihan,
+                transaksi,
+                rekapPerJenis
             });
         });
     });
