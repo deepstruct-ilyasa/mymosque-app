@@ -313,7 +313,6 @@ exports.getApiFinanceData = (req, res) => {
             });
 
             const saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
-            const recentTransactions = trxBulanIni.slice(0, 10);
             
             // Logika Status: Hanya "Aktif" jika itu bulan berjalan dan BELUM tutup buku
             const isActive = (selectedBulan === currentBulan && selectedTahun === currentTahun && !isCurrentClosed);
@@ -325,7 +324,7 @@ exports.getApiFinanceData = (req, res) => {
                 totalMasuk,
                 totalKeluar,
                 saldoAkhir,
-                transactions: recentTransactions
+                transactions: trxBulanIni
             });
         });
     });
