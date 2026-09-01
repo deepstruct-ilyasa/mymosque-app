@@ -109,7 +109,7 @@
                         <% } %>
                     </div>
                     <div>
-                        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight uppercase text-amber-300 drop-shadow-md" id="labelNamaMasjid">
+                        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight uppercase text-amber-300 drop-shadow-md" id="labelNamaMasjid">
                             <%= appSettings.mosque_name || 'undefined' %>
                         </h1>
                         <p class="text-emerald-300 font-semibold tracking-wide text-sm md:text-base uppercase mt-1" id="labelKotaHeader">
@@ -557,7 +557,16 @@
             if (data && data.code === 200) {
                 const timings = data.data.timings;
                 const hijri = data.data.date.hijri;
-                document.getElementById('tanggalHijriyah').innerText = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
+                
+                const cleanHijriyahText = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
+                
+                // ========================================================
+                // BERHASIL ONLINE: Paksa hapus string "(OFFLINE)" dari DOM seketika!
+                // ========================================================
+                const elHijri = document.getElementById('tanggalHijriyah');
+                if (elHijri) {
+                    elHijri.innerText = cleanHijriyahText;
+                }
                 
                 jadwalHariIni = {
                     'Imsak': timings.Imsak,
@@ -571,7 +580,7 @@
 
                 localStorage.setItem('mosque_jadwal_' + dateStr, JSON.stringify({
                     jadwal: jadwalHariIni,
-                    hijriyah: document.getElementById('tanggalHijriyah').innerText
+                    hijriyah: cleanHijriyahText
                 }));
 
                 renderJadwalCards();
@@ -592,7 +601,9 @@
         if (cachedJadwalData) {
             const parsed = JSON.parse(cachedJadwalData);
             jadwalHariIni = parsed.jadwal;
-            document.getElementById('tanggalHijriyah').innerText = parsed.hijriyah + " (OFFLINE)";
+            
+            const cleanHijriyah = parsed.hijriyah ? parsed.hijriyah.replace(" (OFFLINE)", "") : "";
+            document.getElementById('tanggalHijriyah').innerText = cleanHijriyah + " (OFFLINE)";
             renderJadwalCards();
         }
     }
@@ -675,12 +686,11 @@
             if (runningTextArray.length === 0) runningTextArray = ["Selamat datang di Masjid"];
 
             const correctedNow = new Date(Date.now() + timeOffset);
-            if (lastFetchedCity !== data.city) {
+            if (lastFetchedCity !== data.city || Object.keys(jadwalHariIni).length === 0) {
                 lastFetchedCity = data.city;
-                fetchJadwalSholat(data.city, correctedNow);
-            } else {
-                renderJadwalCards();
             }
+            // Panggil fetch setiap sync berjalan agar jika internet pulih, langsung ter-update otomatis!
+            fetchJadwalSholat(data.city, correctedNow);
         } catch (e) {
             const cachedConfig = localStorage.getItem('mosque_config_cache');
             const cachedOffset = localStorage.getItem('mosque_time_offset');

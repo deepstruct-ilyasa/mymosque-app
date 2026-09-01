@@ -109,7 +109,7 @@ app.get('/admin/dashboard', requireAuth, checkPermission('dashboard'), (req, res
 
 app.get('/api/display-settings', displayController.getApiSettings);
 app.get('/display-sholat', (req, res) => {
-    res.render('display_sholat', { title: 'Display Sholat Masjid' });
+    res.render('display/display_sholat', { title: 'Display Sholat Masjid' });
 });
 
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);

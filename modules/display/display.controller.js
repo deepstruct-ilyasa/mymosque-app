@@ -37,7 +37,7 @@ exports.index = (req, res) => {
 
 function renderAdminPage(req, res, generalSettings, sholatRows) {
     displayDb.all("SELECT * FROM tarkhim_audio ORDER BY id DESC", [], (err, audioRows) => {
-        res.render('display/admin_settings', { 
+        res.render('display/setting_display_sholat', { 
             title: 'Pengaturan Modul Display & Tarkhim', 
             generalSettings: generalSettings,
             sholatList: sholatRows || [],
