@@ -2,6 +2,7 @@
 const displayDb = require('../../config/display_db');
 const settingsDb = require('../../config/settings_db');
 const zakatDb = require('../../config/zakat_db');
+const financeDb = require('../../config/finance_db');
 const path = require('path');
 const fs = require('fs');
 
@@ -238,6 +239,93 @@ exports.getApiZakatData = (req, res) => {
                 eventPilihan,
                 transaksi,
                 rekapPerJenis
+            });
+        });
+    });
+};
+
+
+// Render Halaman Display Keuangan (Publik TV)
+exports.renderDisplayFinance = (req, res) => {
+    settingsDb.all("SELECT * FROM app_settings", [], (err, rows) => {
+        const appSettings = {};
+        if (!err && rows) rows.forEach(r => appSettings[r.key] = r.value);
+        res.render('display/display_finance', { title: 'Display Keuangan Masjid', appSettings });
+    });
+};
+
+// API JSON Real-Time untuk Keuangan (Dengan Fitur Dropdown Arsip)
+exports.getApiFinanceData = (req, res) => {
+    const dateNow = new Date();
+    const currentBulan = dateNow.getMonth() + 1;
+    const currentTahun = dateNow.getFullYear();
+
+    // Gunakan parameter dari dropdown (jika ada), jika tidak gunakan bulan saat ini
+    const selectedBulan = req.query.bulan ? parseInt(req.query.bulan) : currentBulan;
+    const selectedTahun = req.query.tahun ? parseInt(req.query.tahun) : currentTahun;
+    const namaBulanArr = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Ambil daftar arsip dari monthly_closings untuk dijadikan opsi dropdown
+    financeDb.all("SELECT bulan, tahun FROM monthly_closings ORDER BY tahun DESC, bulan DESC", [], (err, closings) => {
+        let semuaPeriode = [];
+        
+        // Cek apakah bulan berjalan sudah ditutup buku atau belum
+        let isCurrentClosed = closings && closings.find(c => c.bulan === currentBulan && c.tahun === currentTahun);
+        
+        // Selalu tambahkan bulan saat ini di urutan pertama dropdown
+        semuaPeriode.push({
+            id: `${currentBulan}-${currentTahun}`,
+            label: `${namaBulanArr[currentBulan]} ${currentTahun} ${isCurrentClosed ? '(Arsip)' : '(Aktif)'}`
+        });
+
+        // Masukkan data bulan-bulan lalu yang sudah tutup buku ke dalam dropdown
+        if (closings) {
+            closings.forEach(c => {
+                // Cegah duplikasi jika bulan ini kebetulan sudah ditutup buku
+                if (!(c.bulan === currentBulan && c.tahun === currentTahun)) {
+                    semuaPeriode.push({
+                        id: `${c.bulan}-${c.tahun}`,
+                        label: `${namaBulanArr[c.bulan]} ${c.tahun} (Arsip)`
+                    });
+                }
+            });
+        }
+
+        financeDb.all("SELECT t.*, c.nama_kategori FROM transactions t LEFT JOIN categories c ON t.kategori_id = c.id ORDER BY t.tanggal DESC, t.id DESC", [], (err, rows) => {
+            if (err || !rows) return res.json({ error: "Gagal memuat data keuangan" });
+
+            let saldoAwal = 0, totalMasuk = 0, totalKeluar = 0;
+            let trxBulanIni = [];
+
+            rows.forEach(trx => {
+                const parts = trx.tanggal.split('-');
+                const trxDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+                const currentMonthDate = new Date(selectedTahun, selectedBulan - 1, 1);
+
+                if (trxDate < currentMonthDate) {
+                    if (trx.jenis === 'masuk') saldoAwal += trx.jumlah;
+                    else if (trx.jenis === 'keluar') saldoAwal -= trx.jumlah;
+                } else if (parseInt(parts[0]) === selectedTahun && parseInt(parts[1]) === selectedBulan) {
+                    if (trx.jenis === 'masuk') totalMasuk += trx.jumlah;
+                    else if (trx.jenis === 'keluar') totalKeluar += trx.jumlah;
+                    trxBulanIni.push(trx);
+                }
+            });
+
+            const saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
+            const recentTransactions = trxBulanIni.slice(0, 10);
+            
+            // Logika Status: Hanya "Aktif" jika itu bulan berjalan dan BELUM tutup buku
+            const isActive = (selectedBulan === currentBulan && selectedTahun === currentTahun && !isCurrentClosed);
+
+            res.json({
+                semuaPeriode,
+                isActive,
+                saldoAwal,
+                totalMasuk,
+                totalKeluar,
+                saldoAkhir,
+                transactions: recentTransactions
             });
         });
     });

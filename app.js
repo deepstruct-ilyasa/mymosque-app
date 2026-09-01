@@ -115,6 +115,9 @@ app.get('/display-sholat', (req, res) => {
 app.get('/display-zakat', displayController.renderDisplayZakat);
 app.get('/api/display-zakat-data', displayController.getApiZakatData);
 
+app.get('/display-keuangan', displayController.renderDisplayFinance);
+app.get('/api/display-finance-data', displayController.getApiFinanceData);
+
 app.use('/admin/zakat', requireAuth, checkPermission('zakat'), zakatRoutes);
 app.use('/admin/settings', requireAuth, checkPermission('settings'), settingsRoutes);
 app.use('/admin/users', requireAuth, userRoutes);
